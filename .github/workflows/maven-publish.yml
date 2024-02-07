@@ -54,7 +54,7 @@ jobs:
           OSSRH_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
 
       - name: Build and publish to Apache Maven Central Apache tomcat 9
-        if: contains(github.event.release.tag_name, '-hibernate-6')
+        if: contains(github.event.release.tag_name, '-apache-tomcat-9')
         run: |
           gradle build
           export GPG_TTY=$(tty) && gradle -Psigning.keyId=${{ secrets.GPG_SHORT_KEY }} -Psigning.secretKeyRingFile=/home/runner/.gnupg/secring.gpg -Psigning.password=${GPG_KEY_PASSPHRASE} :apache-tomcat-9:publishLibraryPublicationToCentral_repository_ossrhRepository
@@ -64,7 +64,7 @@ jobs:
           OSSRH_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
 
       - name: Build and publish to Apache Maven Central Apache tomcat 10
-        if: contains(github.event.release.tag_name, '-hibernate-5')
+        if: contains(github.event.release.tag_name, '-apache-tomcat-10')
         run: |
           gradle build      
           export GPG_TTY=$(tty) && gradle -Psigning.keyId=${{ secrets.GPG_SHORT_KEY }} -Psigning.secretKeyRingFile=/home/runner/.gnupg/secring.gpg -Psigning.password=${GPG_KEY_PASSPHRASE} :apache-tomcat-10:publishLibraryPublicationToCentral_repository_ossrhRepository
