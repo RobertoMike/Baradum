@@ -23,7 +23,7 @@ jobs:
 
       - name: Install secret key and Create file secring.gpg
         run: |
-          cat <(echo -e "${{ secrets.OSSRH_GPG_SECRET_KEY }}") | gpg --batch --import
+          cat <(echo -e "${{ secrets.GPG_SECRET_KEY }}") | gpg --batch --import
           gpg --list-secret-keys --keyid-format SHORT
           chmod -R 777 ~/.gnupg
           
