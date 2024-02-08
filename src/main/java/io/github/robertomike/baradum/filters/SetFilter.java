@@ -44,7 +44,8 @@ public class SetFilter<T extends Enum<T>> extends Filter {
         }
 
         if (value.contains(",") || value.contains("|")) {
-            Set<T> values = Arrays.stream(value.split(split)).map(this::transform)
+            Set<T> values = Arrays.stream(value.split(split))
+                    .map(this::transform)
                     .collect(Collectors.toSet());
             List<BaseWhere> wheres = new ArrayList<>();
 

@@ -260,4 +260,14 @@ public class FilterableByBodyTest {
                         .get()
         );
     }
+
+    @BodyRequest("{\"filters\":[{\"value\":\"1\",\"operator\":\"EQUAL\"}]}")
+    void invalidFilter() {
+        assertThrows(FilterException.class, () ->
+                Baradum.make(User.class)
+                        .allowedFilters(new EmptyFilter("id"))
+                        .useBody()
+                        .get()
+        );
+    }
 }

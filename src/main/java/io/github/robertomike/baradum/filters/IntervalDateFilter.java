@@ -24,14 +24,14 @@ public class IntervalDateFilter extends Filter {
 
     @Override
     public void filterByParam(Hefesto<?> query, String value) {
-        Date startDate;
+        String startDate;
         Date endDate = null;
         if (value.contains(",")) {
             String[] dates = value.split(",");
-            startDate = transform(dates[0]);
+            startDate = dates[0];
             endDate = transform(dates[1]);
         } else {
-            startDate = transform(value);
+            startDate = value;
         }
 
         if (endDate != null) {
@@ -42,11 +42,13 @@ public class IntervalDateFilter extends Filter {
             );
         }
 
-        query.where(
-                internalName,
-                Operator.GREATER_OR_EQUAL,
-                startDate
-        );
+        if (!startDate.isBlank()) {
+            query.where(
+                    internalName,
+                    Operator.GREATER_OR_EQUAL,
+                    transform(startDate)
+            );
+        }
     }
 
     @Override

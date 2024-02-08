@@ -2,6 +2,7 @@ package io.github.robertomike.baradum.filters;
 
 import io.github.robertomike.baradum.requests.BasicRequest;
 import io.github.robertomike.hefesto.builders.Hefesto;
+import io.github.robertomike.hefesto.enums.Operator;
 import lombok.Getter;
 
 import java.util.ArrayList;
@@ -34,6 +35,38 @@ public abstract class Filter {
         var val = value.trim();
 
         return ignored.stream().anyMatch(ignore -> Objects.equals(ignore, val));
+    }
+
+    protected Operator getOperator(String value) {
+        if (value.contains("<=")) {
+            return Operator.LESS_OR_EQUAL;
+        } else if (value.contains(">=")) {
+            return Operator.GREATER_OR_EQUAL;
+        } else if (value.contains(">")) {
+            return Operator.GREATER;
+        } else if (value.contains("<")) {
+            return Operator.LESS;
+        } else if (value.contains("<>")) {
+            return Operator.DIFF;
+        }
+
+        return Operator.EQUAL;
+    }
+
+    protected String cleanValue(String value) {
+        if (value.contains("<=")) {
+            return value.replace("<=", "");
+        } else if (value.contains(">=")) {
+            return value.replace(">=", "");
+        } else if (value.contains(">")) {
+            return value.replace(">", "");
+        } else if (value.contains("<")) {
+            return value.replace("<", "");
+        } else if (value.contains("<>")) {
+            return value.replace("<>", "");
+        }
+
+        return value;
     }
 
     public abstract void filterByParam(Hefesto<?> query, String value);

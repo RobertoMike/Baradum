@@ -42,6 +42,10 @@ public class Filterable {
     }
 
     public BaseWhere apply(FilterRequest filter) {
+        if (filter.getSubFilters().isEmpty() && filter.getField() == null) {
+            throw new FilterException("The field and subFilters cannot be empty at the same time");
+        }
+
         if (!filter.getSubFilters().isEmpty()) {
             return new CollectionWhere(
                     filter.getSubFilters().stream()

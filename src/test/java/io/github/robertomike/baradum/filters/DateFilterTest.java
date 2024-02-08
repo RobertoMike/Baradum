@@ -24,21 +24,12 @@ import static org.mockito.Mockito.when;
 public class DateFilterTest {
     public static Stream<Arguments> dateFilters() {
         return Stream.of(
-                Arguments.of(
-                        "01-01-2022", "01-01-2022", Operator.EQUAL
-                ),
-                Arguments.of(
-                        "01-01-2022", "<=01-01-2022", Operator.LESS_OR_EQUAL
-                ),
-                Arguments.of(
-                        "01-01-2022", "<01-01-2022", Operator.LESS
-                ),
-                Arguments.of(
-                        "01-01-2022", ">=01-01-2022", Operator.GREATER_OR_EQUAL
-                ),
-                Arguments.of(
-                        "01-01-2022", ">01-01-2022", Operator.GREATER
-                )
+                Arguments.of("01-01-2022", "01-01-2022", Operator.EQUAL),
+                Arguments.of("01-01-2022", "<=01-01-2022", Operator.LESS_OR_EQUAL),
+                Arguments.of("01-01-2022", "<01-01-2022", Operator.LESS),
+                Arguments.of("01-01-2022", ">=01-01-2022", Operator.GREATER_OR_EQUAL),
+                Arguments.of("01-01-2022", ">01-01-2022", Operator.GREATER),
+                Arguments.of("01-01-2022", "<>01-01-2022", Operator.DIFF)
         );
     }
 

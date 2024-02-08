@@ -24,21 +24,8 @@ public class DateFilter extends Filter {
 
     @Override
     public void filterByParam(Hefesto<?> query, String value) {
-        Operator operator = Operator.EQUAL;
-
-        if (value.contains("<=")) {
-            operator = Operator.LESS_OR_EQUAL;
-            value = value.replace("<=", "");
-        } else if (value.contains(">=")) {
-            operator = Operator.GREATER_OR_EQUAL;
-            value = value.replace(">=", "");
-        } else if (value.contains(">")) {
-            operator = Operator.GREATER;
-            value = value.replace(">", "");
-        } else if (value.contains("<")) {
-            operator = Operator.LESS;
-            value = value.replace("<", "");
-        }
+        Operator operator = getOperator(value);
+        value = cleanValue(value);
 
         Date date = transform(value);
 
