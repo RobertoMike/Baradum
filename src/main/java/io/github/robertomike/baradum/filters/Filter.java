@@ -42,12 +42,12 @@ public abstract class Filter {
             return Operator.LESS_OR_EQUAL;
         } else if (value.contains(">=")) {
             return Operator.GREATER_OR_EQUAL;
+        } else if (value.contains("<>")) {
+            return Operator.DIFF;
         } else if (value.contains(">")) {
             return Operator.GREATER;
         } else if (value.contains("<")) {
             return Operator.LESS;
-        } else if (value.contains("<>")) {
-            return Operator.DIFF;
         }
 
         return Operator.EQUAL;
@@ -58,12 +58,12 @@ public abstract class Filter {
             return value.replace("<=", "");
         } else if (value.contains(">=")) {
             return value.replace(">=", "");
+        } else if (value.contains("<>")) {
+            return value.replace("<>", "");
         } else if (value.contains(">")) {
             return value.replace(">", "");
         } else if (value.contains("<")) {
             return value.replace("<", "");
-        } else if (value.contains("<>")) {
-            return value.replace("<>", "");
         }
 
         return value;
