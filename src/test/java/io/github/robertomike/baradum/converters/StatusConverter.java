@@ -1,8 +1,8 @@
 package io.github.robertomike.baradum.converters;
 
 import io.github.robertomike.baradum.models.Status;
-import jakarta.persistence.AttributeConverter;
 
+import javax.persistence.AttributeConverter;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;

@@ -2,9 +2,9 @@ package io.github.robertomike.baradum.models;
 
 import io.github.robertomike.baradum.converters.StatusConverter;
 import io.github.robertomike.hefesto.models.HibernateModel;
-import jakarta.persistence.*;
 import lombok.*;
 
+import javax.persistence.*;
 import java.util.List;
 import java.util.Set;
 
@@ -32,8 +32,6 @@ public class User implements HibernateModel {
             inverseJoinColumns = @JoinColumn(name = "pet_id"))
     @ToString.Exclude
     private Set<Pet> pets;
-    @OneToMany(fetch = FetchType.LAZY, mappedBy = "user")
-    private List<Address> addresses;
 
     public User(Long id, String name) {
         this.id = id;

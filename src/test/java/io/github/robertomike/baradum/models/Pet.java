@@ -1,9 +1,9 @@
 package io.github.robertomike.baradum.models;
 
 import io.github.robertomike.hefesto.models.HibernateModel;
-import jakarta.persistence.*;
 import lombok.*;
 
+import javax.persistence.*;
 import java.util.Set;
 
 @Getter
