@@ -28,7 +28,7 @@ jobs:
           chmod -R 777 ~/.gnupg
           
           export GPG_TTY=$(tty) 
-          gpg --batch --export-secret-keys --pinentry-mode=loopback --passphrase ${{ secrets.OSSRH_GPG_SECRET_KEY_PASSWORD }} -o ~/.gnupg/secring.gpg
+          gpg --batch --export-secret-keys --pinentry-mode=loopback --passphrase ${{ secrets.GPG_SECRET_KEY_PASSWORD }} -o ~/.gnupg/secring.gpg
           ls -lh ~/.gnupg/secring.gpg
 
       - uses: actions/checkout@v3
@@ -41,7 +41,7 @@ jobs:
           server-username: MAVEN_USERNAME
           server-password: MAVEN_PASSWORD
           gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }} # Value of the GPG private key to import
-          gpg-passphrase: MAVEN_GPG_PASSPHRASE # env variable for GPG private key passphrase
+          gpg-passphrase: GPG_KEY_PASSPHRASE # env variable for GPG private key passphrase
 
       - name: Build and publish to Apache Maven Central Baradum
         if: contains(github.event.release.tag_name, '-baradum')
@@ -49,7 +49,7 @@ jobs:
           gradle build
           export GPG_TTY=$(tty) && gradle -Psigning.keyId=${{ secrets.GPG_SHORT_KEY }} -Psigning.secretKeyRingFile=/home/runner/.gnupg/secring.gpg -Psigning.password=${GPG_KEY_PASSPHRASE} :publishLibraryPublicationToCentral_repository_ossrhRepository
         env:
-          GPG_KEY_PASSPHRASE: ${{ secrets.OSSRH_GPG_SECRET_KEY_PASSWORD }}
+          GPG_KEY_PASSPHRASE: ${{ secrets.GPG_SECRET_KEY_PASSWORD }}
           OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           OSSRH_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
 
@@ -59,7 +59,7 @@ jobs:
           gradle build
           export GPG_TTY=$(tty) && gradle -Psigning.keyId=${{ secrets.GPG_SHORT_KEY }} -Psigning.secretKeyRingFile=/home/runner/.gnupg/secring.gpg -Psigning.password=${GPG_KEY_PASSPHRASE} :apache-tomcat-9:publishLibraryPublicationToCentral_repository_ossrhRepository
         env:
-          GPG_KEY_PASSPHRASE: ${{ secrets.OSSRH_GPG_SECRET_KEY_PASSWORD }}
+          GPG_KEY_PASSPHRASE: ${{ secrets.GPG_SECRET_KEY_PASSWORD }}
           OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           OSSRH_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
 
@@ -69,6 +69,6 @@ jobs:
           gradle build      
           export GPG_TTY=$(tty) && gradle -Psigning.keyId=${{ secrets.GPG_SHORT_KEY }} -Psigning.secretKeyRingFile=/home/runner/.gnupg/secring.gpg -Psigning.password=${GPG_KEY_PASSPHRASE} :apache-tomcat-10:publishLibraryPublicationToCentral_repository_ossrhRepository
         env:
-          GPG_KEY_PASSPHRASE: ${{ secrets.OSSRH_GPG_SECRET_KEY_PASSWORD }}
+          GPG_KEY_PASSPHRASE: ${{ secrets.GPG_SECRET_KEY_PASSWORD }}
           OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           OSSRH_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
