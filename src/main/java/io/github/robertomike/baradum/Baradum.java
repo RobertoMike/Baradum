@@ -50,6 +50,17 @@ public class Baradum<T extends BaseModel> {
     }
 
     /**
+     * Adds the specified filters to the list of allowed filters.
+     *
+     * @param filters the filters to be added
+     * @return the updated Baradum instance
+     */
+    public Baradum<T> allowedFilters(List<Filter> filters) {
+        filterable.addFilters(filters);
+        return this;
+    }
+
+    /**
      * Adds allowed filters to the Baradum object with ExactFilter.
      *
      * @param filters varargs of filters to be added
@@ -78,6 +89,17 @@ public class Baradum<T extends BaseModel> {
      * @return the Baradum object with the added allowed sorts
      */
     public Baradum<T> allowedSort(OrderBy... sorts) {
+        sortable.addSorts(sorts);
+        return this;
+    }
+
+    /**
+     * A method to add allowed sorts to the Baradum object.
+     *
+     * @param sorts an array of OrderBy objects representing the allowed sorts
+     * @return the Baradum object with the added allowed sorts
+     */
+    public Baradum<T> allowedSort(List<OrderBy> sorts) {
         sortable.addSorts(sorts);
         return this;
     }
