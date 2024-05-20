@@ -22,8 +22,12 @@ public class Filterable {
         Arrays.asList(filters).forEach(sort -> allowedFilters.add(new ExactFilter(sort)));
     }
 
-    public void addFilters(Filter... sorts) {
-        allowedFilters.addAll(List.of(sorts));
+    public void addFilters(Filter... filters) {
+        allowedFilters.addAll(List.of(filters));
+    }
+
+    public void addFilters(List<Filter> filters) {
+        allowedFilters.addAll(filters);
     }
 
     public void apply(Hefesto<?> builder, BasicRequest<?> request) {

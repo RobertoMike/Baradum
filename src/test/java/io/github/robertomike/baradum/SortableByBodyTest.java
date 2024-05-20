@@ -8,6 +8,8 @@ import io.github.robertomike.baradum.sorting.OrderBy;
 import io.github.robertomike.hefesto.builders.Hefesto;
 import io.github.robertomike.hefesto.enums.Sort;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
 
@@ -25,7 +27,17 @@ public class SortableByBodyTest {
     }
 
     @BodyRequest("{\"sorts\":[{\"field\":\"id\"}]}")
-    void sortByBodyByAlias(Hefesto<User> hefesto) {
+    void sortByIdPassingListAndAlias(Hefesto<User> hefesto) {
+        Baradum.make(User.class)
+                .allowedSort(List.of(new OrderBy("id", "name")))
+                .useBody()
+                .get();
+
+        verify(hefesto).orderBy("name", Sort.ASC);
+    }
+
+    @BodyRequest("{\"sorts\":[{\"field\":\"id\"}]}")
+    void sortByIdPassingAlias(Hefesto<User> hefesto) {
         Baradum.make(User.class)
                 .allowedSort(new OrderBy("id", "name"))
                 .useBody()

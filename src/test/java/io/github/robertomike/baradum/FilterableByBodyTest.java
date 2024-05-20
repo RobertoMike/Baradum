@@ -58,7 +58,7 @@ public class FilterableByBodyTest {
     @BodyRequest("{\"filters\":[{\"field\":\"id\",\"operator\":\"EQUAL\",\"value\":\"ACTIVE\"}]}")
     void allowEnumFilter(Hefesto<User> hefesto) {
         Baradum.make(User.class)
-                .allowedFilters(new EnumFilter<>("id", Status.class))
+                .allowedFilters(List.of(new EnumFilter<>("id", Status.class)))
                 .useBody()
                 .get();
 

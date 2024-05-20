@@ -22,6 +22,10 @@ public class Sortable {
         allowedSorts.addAll(List.of(sorts));
     }
 
+    public void addSorts(List<OrderBy> sorts) {
+        allowedSorts.addAll(sorts);
+    }
+
     public void apply(Hefesto<?> builder, BasicRequest<?> request) {
         if (request.notExistsByName("sort")) {
             return;
