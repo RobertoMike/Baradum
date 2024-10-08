@@ -1,32 +1,22 @@
-package io.github.robertomike.baradum.filters;
+package io.github.robertomike.baradum.filters
 
-import io.github.robertomike.baradum.requests.BasicRequest;
-import io.github.robertomike.hefesto.actions.wheres.Where;
-import io.github.robertomike.hefesto.builders.Hefesto;
-import io.github.robertomike.hefesto.enums.Operator;
-import io.github.robertomike.hefesto.enums.WhereOperator;
+import io.github.robertomike.baradum.requests.BasicRequest
+import io.github.robertomike.hefesto.actions.wheres.Where
+import io.github.robertomike.hefesto.builders.Hefesto
+import io.github.robertomike.hefesto.enums.Operator
+import io.github.robertomike.hefesto.enums.WhereOperator
 
-public class EmptyFilter extends Filter {
-    public EmptyFilter(String field, String internalName) {
-        super(field, internalName);
-    }
-
-    public EmptyFilter(String field) {
-        super(field, field);
-    }
-
-    @Override
-    public void filterByParam(Hefesto<?> query, BasicRequest<?> request) {
+class EmptyFilter @JvmOverloads constructor(field: String, internalName: String = field) : Filter<Any>(field, internalName) {
+    override fun filterByParam(query: Hefesto<*>, request: BasicRequest<*>) {
         if (request.findByName(field) != null) {
-            filterByParam(query, "");
+            filterByParam(query, "")
         }
     }
 
-    @Override
-    public void filterByParam(Hefesto<?> query, String value) {
+    override fun filterByParam(query: Hefesto<*>, value: String) {
         query.where(
-                new Where(internalName, Operator.IS_NULL, null),
-                Where.make(internalName, "", WhereOperator.OR)
-        );
+            Where(internalName, Operator.IS_NULL, null),
+            Where.make(internalName, "", WhereOperator.OR)
+        )
     }
 }

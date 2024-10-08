@@ -1,7 +1,3 @@
-package io.github.robertomike.baradum.exceptions;
+package io.github.robertomike.baradum.exceptions
 
-public class FilterException extends RuntimeException {
-    public FilterException(String message) {
-        super(message);
-    }
-}
+class FilterException(message: String) : RuntimeException(message)

@@ -1,52 +1,45 @@
-package io.github.robertomike.baradum;
+package io.github.robertomike.baradum
 
-import io.github.robertomike.baradum.exceptions.BaradumException;
-import io.github.robertomike.baradum.filters.Filter;
-import io.github.robertomike.baradum.filters.Filterable;
-import io.github.robertomike.baradum.requests.BasicRequest;
-import io.github.robertomike.baradum.sorting.OrderBy;
-import io.github.robertomike.baradum.sorting.Sortable;
-import io.github.robertomike.hefesto.actions.Select;
-import io.github.robertomike.hefesto.builders.Hefesto;
-import io.github.robertomike.hefesto.models.BaseModel;
-import io.github.robertomike.hefesto.utils.Page;
-import lombok.Getter;
-import lombok.Setter;
 
-import java.util.List;
+import io.github.robertomike.baradum.exceptions.BaradumException
+import io.github.robertomike.baradum.filters.Filter
+import io.github.robertomike.baradum.filters.Filterable
+import io.github.robertomike.baradum.requests.BasicRequest
+import io.github.robertomike.baradum.sorting.OrderBy
+import io.github.robertomike.baradum.sorting.Sortable
+import io.github.robertomike.hefesto.actions.Select
+import io.github.robertomike.hefesto.builders.Hefesto
+import io.github.robertomike.hefesto.constructors.ConstructWhereImplementation
+import io.github.robertomike.hefesto.models.BaseModel
+import io.github.robertomike.hefesto.utils.ConditionalBuilder
+import io.github.robertomike.hefesto.utils.Page
+import java.util.Optional
 
-@Getter
-public class Baradum<T extends BaseModel> {
-    @Setter
-    private static BasicRequest<?> request;
-    private final Hefesto<T> builder;
-    private final Sortable sortable = new Sortable();
-    private final Filterable filterable = new Filterable();
-    private boolean useBody = false;
+class Baradum<T: BaseModel>(model: Class<T>): ConditionalBuilder<Baradum<T>, ConstructWhereImplementation> {
+    private var builder: Hefesto<T> = Hefesto.make(model)
+    private var sortable = Sortable()
+    private var filterable = Filterable()
+    private var useBody = false
+    private var onlyBody = false
 
-    public Baradum(Class<T> model) {
-        this.builder = Hefesto.make(model);
-    }
+    companion object {
+        private lateinit var request: BasicRequest<out Any>
 
-    /**
-     * Creates a new instance of Baradum with the specified model class.
-     *
-     * @param model the model class for Baradum
-     * @return a new instance of Baradum with the specified model class
-     */
-    public static <T extends BaseModel> Baradum<T> make(Class<T> model) {
-        return new Baradum<>(model);
-    }
+        @JvmStatic
+        fun setRequest(request: BasicRequest<out Any>) {
+            Baradum.request = request
+        }
 
-    /**
-     * Adds the specified filters to the list of allowed filters.
-     *
-     * @param filters the filters to be added
-     * @return the updated Baradum instance
-     */
-    public Baradum<T> allowedFilters(Filter... filters) {
-        filterable.addFilters(filters);
-        return this;
+        /**
+         * Creates a new instance of Baradum with the specified model class.
+         *
+         * @param model the model class for Baradum
+         * @return a new instance of Baradum with the specified model class
+         */
+        @JvmStatic
+        fun <T: BaseModel> make(model: Class<T>): Baradum<T> {
+            return Baradum(model)
+        }
     }
 
     /**
@@ -55,9 +48,20 @@ public class Baradum<T extends BaseModel> {
      * @param filters the filters to be added
      * @return the updated Baradum instance
      */
-    public Baradum<T> allowedFilters(List<Filter> filters) {
-        filterable.addFilters(filters);
-        return this;
+    fun allowedFilters(vararg filters: Filter<*>): Baradum<T> {
+        filterable.addFilters(*filters)
+        return this
+    }
+
+    /**
+     * Adds the specified filters to the list of allowed filters.
+     *
+     * @param filters the filters to be added
+     * @return the updated Baradum instance
+     */
+    fun allowedFilters(filters: List<Filter<*>>): Baradum<T> {
+        filterable.addFilters(filters)
+        return this
     }
 
     /**
@@ -66,9 +70,9 @@ public class Baradum<T extends BaseModel> {
      * @param filters varargs of filters to be added
      * @return the Baradum object
      */
-    public Baradum<T> allowedFilters(String... filters) {
-        filterable.addFilters(filters);
-        return this;
+    fun allowedFilters(vararg filters: String): Baradum<T> {
+        filterable.addFilters(*filters)
+        return this
     }
 
     /**
@@ -77,9 +81,9 @@ public class Baradum<T extends BaseModel> {
      * @param sorts variable number of sort criteria
      * @return the updated Baradum object
      */
-    public Baradum<T> allowedSort(String... sorts) {
-        sortable.addSorts(sorts);
-        return this;
+    fun allowedSort(vararg sorts: String): Baradum<T> {
+        sortable.addSorts(*sorts)
+        return this
     }
 
     /**
@@ -88,9 +92,9 @@ public class Baradum<T extends BaseModel> {
      * @param sorts an array of OrderBy objects representing the allowed sorts
      * @return the Baradum object with the added allowed sorts
      */
-    public Baradum<T> allowedSort(OrderBy... sorts) {
-        sortable.addSorts(sorts);
-        return this;
+    fun allowedSort(vararg sorts: OrderBy): Baradum<T> {
+        sortable.addSorts(*sorts)
+        return this
     }
 
     /**
@@ -99,9 +103,9 @@ public class Baradum<T extends BaseModel> {
      * @param sorts an array of OrderBy objects representing the allowed sorts
      * @return the Baradum object with the added allowed sorts
      */
-    public Baradum<T> allowedSort(List<OrderBy> sorts) {
-        sortable.addSorts(sorts);
-        return this;
+    fun allowedSort(sorts: List<OrderBy>): Baradum<T> {
+        sortable.addSorts(sorts)
+        return this
     }
 
     /**
@@ -110,9 +114,9 @@ public class Baradum<T extends BaseModel> {
      * @param selects the selects
      * @return the current instance
      */
-    public Baradum<T> selects(String... selects) {
-        builder.select(selects);
-        return this;
+    fun selects(vararg selects: String): Baradum<T> {
+        builder.select(*selects)
+        return this
     }
 
     /**
@@ -121,9 +125,9 @@ public class Baradum<T extends BaseModel> {
      * @param selects the selects
      * @return the current instance
      */
-    public Baradum<T> addSelects(String... selects) {
-        List.of(selects).forEach(builder::addSelect);
-        return this;
+    fun addSelects(vararg selects: String): Baradum<T> {
+        listOf(*selects).forEach(builder::addSelect)
+        return this
     }
 
     /**
@@ -132,35 +136,64 @@ public class Baradum<T extends BaseModel> {
      * @param selects the selects
      * @return the current instance
      */
-    public Baradum<T> addSelects(Select... selects) {
-        builder.addSelect(selects);
-        return this;
+    fun addSelects(vararg selects: Select): Baradum<T> {
+        builder.addSelect(*selects)
+        return this
     }
 
-    public Baradum<T> useBody() {
-        useBody = true;
-        return this;
+    /**
+     * Sets the value of the `useBody` variable to `true` and returns the current instance of the class.
+     * <br>
+     * Using this method, allow you to use this class with POST requests and at the same time this request params for GET
+     *
+     * @return The current instance of the class.
+     */
+    fun useBody(): Baradum<T> {
+        useBody = true
+        return this
     }
 
-    private void apply() {
-        if (!request.getMethod().equalsIgnoreCase("POST") && useBody) {
-            throw new BaradumException("Body can only be used with POST requests");
+    /**
+     * Sets the value of the `useBody` variable to `true`, onlyBody to `true` and returns the current instance of the class.
+     * <br>
+     * Using this method, only allow you to use this class with POST requests. If used in other ways will throw an exception
+     *
+     * @return The current instance of the class.
+     */
+    fun useOnlyBody(): Baradum<T> {
+        useBody = true
+        onlyBody = true
+        return this
+    }
+
+    /**
+     * Apply the filters and sorts to Hefesto.
+     * <br>
+     * If the request is a POST and the `useBody` is true, the body will be read and the filters and sorts will be applied.
+     * <br>
+     * If the request is not a POST or the `useBody` is false, the filters and sorts will be applied from the parameters of the request.
+     * <br>
+     * If the `onlyBody` is true and the request is not a POST, an exception will be thrown.
+     */
+    private fun apply() {
+        if (request.method != "POST" && onlyBody) {
+            throw BaradumException("Body can only be used with POST requests")
         }
 
-        if (useBody) {
-            request.loadBody();
-            var body = request.getBodyRequest();
-            filterable.apply(builder, body.getFilters());
-            sortable.apply(builder, body.getSorts());
+        if (useBody && request.method == "POST") {
+            val body = request.loadBodyAndGet() ?: throw BaradumException("No body in request")
+
+            filterable.apply(builder, body.filters)
+            sortable.apply(builder, body.sorts)
 
             // Clean body
-            request.cleanBody();
-            return;
+            request.cleanBody()
+            return
 
         }
 
-        filterable.apply(builder, request);
-        sortable.apply(builder, request);
+        filterable.apply(builder, request)
+        sortable.apply(builder, request)
     }
 
     /**
@@ -168,9 +201,9 @@ public class Baradum<T extends BaseModel> {
      *
      * @return the list of type T
      */
-    public List<T> get() {
-        apply();
-        return builder.get();
+    fun get(): List<T> {
+        apply()
+        return builder.get()
     }
 
     /**
@@ -180,9 +213,9 @@ public class Baradum<T extends BaseModel> {
      * @param offset the starting position of the items to retrieve
      * @return a page of elements
      */
-    public Page<T> page(int limit, long offset) {
-        apply();
-        return builder.page(limit, offset);
+    fun page(limit: Int, offset: Long): Page<T> {
+        apply()
+        return builder.page(limit, offset)
     }
 
     /**
@@ -191,7 +224,21 @@ public class Baradum<T extends BaseModel> {
      * @param limit the maximum number of items to include in the page
      * @return a page of items
      */
-    public Page<T> page(int limit) {
-        return page(limit, 0);
+    fun page(limit: Int): Page<T> {
+        return page(limit, 0)
+    }
+
+    /**
+     * Returns an optional with a single element.
+     *
+     * @return optionalWith a single element
+     */
+    fun findFirst(): Optional<T> {
+        apply()
+        return builder.findFirst()
+    }
+
+    override fun getWheres(): ConstructWhereImplementation {
+        return builder.wheres
     }
 }

@@ -1,19 +1,19 @@
-package io.github.robertomike.baradum.requests;
+package io.github.robertomike.baradum.requests
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.*;
+import com.fasterxml.jackson.databind.ObjectMapper
+import io.github.robertomike.baradum.Baradum
+import io.github.robertomike.baradum.exceptions.BaradumException
+import lombok.SneakyThrows
+import lombok.extern.log4j.Log4j
+import lombok.extern.log4j.Log4j2
+import lombok.extern.slf4j.Slf4j
+import java.io.BufferedReader
+import java.io.IOException
+import java.util.stream.Collectors
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.util.stream.Collectors;
-
-@Getter
-@Setter
-@RequiredArgsConstructor
-public abstract class BasicRequest<T> {
-    private ObjectMapper mapper = new ObjectMapper();
-    private final T request;
-    private BodyRequest bodyRequest = null;
+abstract class BasicRequest<T>(val request: T) {
+    private val mapper = ObjectMapper()
+    var bodyRequest: BodyRequest? = null
 
     /**
      * Finds a parameter by name.
@@ -21,8 +21,8 @@ public abstract class BasicRequest<T> {
      * @param name the name of the parameter to find
      * @return the parameter found by name
      */
-    public String findByName(String name) {
-        return findParamByName(name);
+    fun findByName(name: String): String? {
+        return findParamByName(name)
     }
 
     /**
@@ -31,10 +31,10 @@ public abstract class BasicRequest<T> {
      * @param name the name of the parameter to check
      * @return true if the parameter does not exist, false otherwise
      */
-    public boolean notExistsByName(String name) {
-        var value = findParamByName(name);
+    fun notExistsByName(name: String): Boolean {
+        val value = findParamByName(name)
 
-        return value == null || value.isBlank();
+        return value.isNullOrBlank()
     }
 
     /**
@@ -43,23 +43,34 @@ public abstract class BasicRequest<T> {
      * @param name the name of the parameter
      * @return the parameter found, or
      */
-    public abstract String findParamByName(String name);
+    abstract fun findParamByName(name: String): String?
 
-    public abstract String getMethod();
+    abstract val method: String
 
-    public abstract BufferedReader getReader() throws IOException;
+    @get:Throws(IOException::class)
+    abstract val reader: BufferedReader
 
-    @SneakyThrows
-    public void loadBody() {
-        if (bodyRequest == null) {
+    fun loadBodyAndGet(): BodyRequest? {
+        loadBody()
+        return bodyRequest
+    }
+
+    fun loadBody() {
+        if (bodyRequest != null) {
+            return
+        }
+
+        try {
             bodyRequest = mapper.readValue(
-                    getReader().lines().collect(Collectors.joining(System.lineSeparator())),
-                    BodyRequest.class
-            );
+                reader.lines().collect(Collectors.joining(System.lineSeparator())),
+                BodyRequest::class.java
+            )
+        } catch (e: Exception) {
+            throw BaradumException("Error reading body request", e)
         }
     }
 
-    public void cleanBody() {
-        bodyRequest = null;
+    fun cleanBody() {
+        bodyRequest = null
     }
 }

@@ -1,7 +1,4 @@
-package io.github.robertomike.baradum.sorting;
+package io.github.robertomike.baradum.sorting
 
-public record OrderBy(String name, String internalName) {
-    public OrderBy(String name) {
-        this(name, name);
-    }
-}
+@JvmRecord
+data class OrderBy @JvmOverloads constructor(val name: String, val internalName: String = name)

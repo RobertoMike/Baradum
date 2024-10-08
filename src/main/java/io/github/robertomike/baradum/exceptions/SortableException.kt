@@ -1,7 +1,3 @@
-package io.github.robertomike.baradum.exceptions;
+package io.github.robertomike.baradum.exceptions
 
-public class SortableException extends RuntimeException {
-    public SortableException(String message) {
-        super(message);
-    }
-}
+class SortableException(message: String) : RuntimeException(message)

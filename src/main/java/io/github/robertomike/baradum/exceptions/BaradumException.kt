@@ -1,7 +1,4 @@
-package io.github.robertomike.baradum.exceptions;
+package io.github.robertomike.baradum.exceptions
 
-public class BaradumException extends RuntimeException {
-    public BaradumException(String message) {
-        super(message);
-    }
-}
+class BaradumException @JvmOverloads constructor(message: String = "", cause: Throwable? = null) :
+    RuntimeException(message, cause)

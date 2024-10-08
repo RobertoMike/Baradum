@@ -1,23 +1,13 @@
-package io.github.robertomike.baradum.filters;
+package io.github.robertomike.baradum.filters
 
-import io.github.robertomike.hefesto.builders.Hefesto;
+import io.github.robertomike.hefesto.builders.Hefesto
 
-public class ExactFilter extends Filter {
-    public ExactFilter(String field, String internalName) {
-        super(field, internalName);
+class ExactFilter @JvmOverloads constructor(field: String, internalName: String = field) : Filter<Any>(field, internalName) {
+    override fun filterByParam(query: Hefesto<*>, value: String) {
+        query.where(internalName, value)
     }
 
-    public ExactFilter(String field) {
-        super(field, field);
-    }
-
-    @Override
-    public void filterByParam(Hefesto<?> query, String value) {
-        query.where(internalName, value);
-    }
-
-    @Override
-    public boolean supportBodyOperation() {
-        return true;
+    override fun supportBodyOperation(): Boolean {
+        return true
     }
 }

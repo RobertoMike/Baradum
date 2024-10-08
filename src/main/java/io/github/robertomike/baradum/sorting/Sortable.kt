@@ -1,60 +1,55 @@
-package io.github.robertomike.baradum.sorting;
+package io.github.robertomike.baradum.sorting
 
-import io.github.robertomike.baradum.exceptions.SortableException;
-import io.github.robertomike.baradum.requests.BasicRequest;
-import io.github.robertomike.baradum.requests.OrderRequest;
-import io.github.robertomike.hefesto.builders.Hefesto;
-import io.github.robertomike.hefesto.enums.Sort;
+import io.github.robertomike.baradum.exceptions.SortableException
+import io.github.robertomike.baradum.requests.BasicRequest
+import io.github.robertomike.baradum.requests.OrderRequest
+import io.github.robertomike.hefesto.builders.Hefesto
+import io.github.robertomike.hefesto.enums.Sort
+import java.util.*
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+class Sortable {
+    private var allowedSorts: MutableList<OrderBy> = ArrayList()
 
-public class Sortable {
-    public List<OrderBy> allowedSorts = new ArrayList<>();
-
-    public void addSorts(String... sorts) {
-        Arrays.asList(sorts).forEach(sort -> allowedSorts.add(new OrderBy(sort)));
+    fun addSorts(vararg sorts: String) {
+        listOf(*sorts).forEach { allowedSorts.add(OrderBy(it)) }
     }
 
-    public void addSorts(OrderBy... sorts) {
-        allowedSorts.addAll(List.of(sorts));
+    fun addSorts(vararg sorts: OrderBy) {
+        allowedSorts.addAll(listOf(*sorts))
     }
 
-    public void addSorts(List<OrderBy> sorts) {
-        allowedSorts.addAll(sorts);
+    fun addSorts(sorts: List<OrderBy>) {
+        allowedSorts.addAll(sorts)
     }
 
-    public void apply(Hefesto<?> builder, BasicRequest<?> request) {
+    fun apply(builder: Hefesto<*>, request: BasicRequest<*>) {
         if (request.notExistsByName("sort")) {
-            return;
+            return
         }
 
-        String[] sorts = request.findByName("sort")
-                .trim().split(",");
+        val sorts = request.findByName("sort")!!
+            .trim { it <= ' ' }
+            .split(",")
 
-        var sortList = Arrays.asList(sorts).stream().map(sort -> new OrderRequest(
-                sort.replace("-", ""),
-                sort.contains("-") ? Sort.DESC : Sort.ASC
-        )).toList();
+        val sortList = sorts.map {
+            OrderRequest(
+                it.replace("-", ""),
+                if (it.contains("-")) Sort.DESC else Sort.ASC
+            )
+        }
 
-        apply(builder, sortList);
+        apply(builder, sortList)
     }
 
-    public void apply(Hefesto<?> builder, List<OrderRequest> sorts) {
-        sorts.forEach(sort -> {
-            Optional<OrderBy> optionalOrderBy = allowedSorts
-                    .stream()
-                    .filter(allowedSort -> allowedSort.name().equals(sort.getField()))
-                    .findFirst();
+    fun apply(builder: Hefesto<*>, sorts: List<OrderRequest>) {
+        sorts.forEach { sort ->
+            val result = allowedSorts.firstOrNull { allowedSort -> allowedSort.name == sort.field }
 
-            optionalOrderBy.ifPresentOrElse(
-                    orderBy -> builder.orderBy(orderBy.internalName(), sort.getSort()),
-                    () -> {
-                        throw new SortableException("The field '" + sort.getField() + "' is not valid");
-                    }
-            );
-        });
+            if (result == null) {
+                throw SortableException("The field '${sort.field}' is not valid")
+            }
+
+            builder.orderBy(result.internalName, sort.sort)
+        }
     }
 }

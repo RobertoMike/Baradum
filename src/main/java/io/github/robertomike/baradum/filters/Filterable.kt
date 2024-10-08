@@ -1,101 +1,90 @@
-package io.github.robertomike.baradum.filters;
+package io.github.robertomike.baradum.filters
 
-import io.github.robertomike.baradum.exceptions.FilterException;
-import io.github.robertomike.baradum.requests.BasicRequest;
-import io.github.robertomike.baradum.requests.FilterRequest;
-import io.github.robertomike.hefesto.actions.wheres.BaseWhere;
-import io.github.robertomike.hefesto.actions.wheres.CollectionWhere;
-import io.github.robertomike.hefesto.actions.wheres.Where;
-import io.github.robertomike.hefesto.builders.Hefesto;
-import io.github.robertomike.hefesto.enums.Operator;
+import io.github.robertomike.baradum.exceptions.FilterException
+import io.github.robertomike.baradum.requests.BasicRequest
+import io.github.robertomike.baradum.requests.FilterRequest
+import io.github.robertomike.hefesto.actions.wheres.BaseWhere
+import io.github.robertomike.hefesto.actions.wheres.CollectionWhere
+import io.github.robertomike.hefesto.actions.wheres.Where
+import io.github.robertomike.hefesto.builders.Hefesto
+import io.github.robertomike.hefesto.enums.Operator
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.Stream;
+class Filterable {
+    val allowedFilters: MutableList<Filter<*>> = ArrayList()
 
-public class Filterable {
-    public List<Filter> allowedFilters = new ArrayList<>();
-
-    public void addFilters(String... filters) {
-        Arrays.asList(filters).forEach(sort -> allowedFilters.add(new ExactFilter(sort)));
+    fun addFilters(vararg filters: String) {
+        listOf(*filters).forEach { allowedFilters.add(ExactFilter(it)) }
     }
 
-    public void addFilters(Filter... filters) {
-        allowedFilters.addAll(List.of(filters));
+    fun addFilters(vararg filters: Filter<*>) {
+        allowedFilters.addAll(listOf(*filters))
     }
 
-    public void addFilters(List<Filter> filters) {
-        allowedFilters.addAll(filters);
+    fun addFilters(filters: Collection<Filter<*>>) {
+        allowedFilters.addAll(filters)
     }
 
-    public void apply(Hefesto<?> builder, BasicRequest<?> request) {
-        allowedFilters.forEach((filter) -> filter.filterByParam(builder, request));
+    fun apply(builder: Hefesto<*>, request: BasicRequest<*>) {
+        allowedFilters.forEach { it.filterByParam(builder, request) }
     }
 
-    public void apply(Hefesto<?> builder, List<FilterRequest> filters) {
-        filters.forEach(filterRequest -> {
-                    var where = apply(filterRequest);
-                    if (where == null) {
-                        return;
-                    }
-
-                    builder.where(where);
-                });
+    fun apply(builder: Hefesto<*>, filters: Collection<FilterRequest>) {
+        filters.forEach {
+            val where = apply(it) ?: return@forEach
+            builder.where(where)
+        }
     }
 
-    public BaseWhere apply(FilterRequest filter) {
-        if (filter.getSubFilters().isEmpty() && filter.getField() == null) {
-            throw new FilterException("The field and subFilters cannot be empty at the same time");
+    private fun apply(filter: FilterRequest): BaseWhere? {
+        if (filter.subFilters.isEmpty() && filter.field == null) {
+            throw FilterException("The field and subFilters cannot be empty at the same time")
         }
 
-        if (!filter.getSubFilters().isEmpty()) {
-            return new CollectionWhere(
-                    filter.getSubFilters().stream()
-                            .map(this::apply)
-                            .filter(Objects::nonNull)
-                            .toList(),
-                    filter.getType()
-            );
+        if (filter.subFilters.isNotEmpty()) {
+            return CollectionWhere(
+                filter.subFilters.mapNotNull(this::apply),
+                filter.type
+            )
         }
 
-        return searchFilterAndExecute(filter);
+        return searchFilterAndExecute(filter)
     }
 
-    private BaseWhere searchFilterAndExecute(FilterRequest filterRequest) {
-        var filter = allowedFilters
-                .stream()
-                .filter(allowed -> allowed.getField().equals(filterRequest.getField()))
-                .findFirst()
-                .orElseThrow(() -> new FilterException("The field '" + filterRequest.getField() + "' is not allowed"));
+    private fun searchFilterAndExecute(filterRequest: FilterRequest): BaseWhere? {
+        val filter = allowedFilters
+            .firstOrNull { it.field == filterRequest.field }
+            ?: throw FilterException("The field '${filterRequest.field}' is not allowed")
 
         if (!filter.supportBodyOperation()) {
-            throw new FilterException("The filter '" + filterRequest.getClass().getSimpleName() + "' not support body request");
+            throw FilterException("The filter '" + filterRequest.javaClass.simpleName + "' not support body request")
         }
 
-        var operator = filterRequest.getOperator();
+        val operator = filterRequest.operator
+        val value = filterRequest.value
 
-        if (canApplyIgnore(operator) && filter.ignore(filterRequest.getValue())) {
-            return null;
+        if (canApplyIgnore(operator) && (value == null || filter.ignore(value))) {
+            return null
         }
 
-        var field = filter.getInternalName();
-        Object value = filterRequest.getValue();
-        var whereOperator = filterRequest.getType();
+        val field = filter.internalName
+        val whereOperator = filterRequest.type
 
-        switch (operator) {
-            case IN, NOT_IN -> value = Stream.of(value.toString().split(","))
-                    .map(filter::transform)
-                    .toList();
-            case IS_NULL, IS_NOT_NULL -> value = null;
-            default -> value = filter.transform((String) value);
+        val finalValue: Any? = when (operator) {
+            Operator.IN, Operator.NOT_IN -> notNullValue(value, operator).split(",")
+                .map(filter::transform)
+
+            Operator.IS_NULL, Operator.IS_NOT_NULL -> null
+            else -> filter.transform(notNullValue(value, operator))
         }
 
-        return new Where(field,  operator, value, whereOperator);
+        return Where(field, operator, finalValue, whereOperator)
     }
 
-    private boolean canApplyIgnore(Operator operator) {
-        return !(operator.equals(Operator.IS_NULL) || operator.equals(Operator.IS_NOT_NULL));
+    private fun <T> notNullValue(value: T?, operator: Operator): T {
+        return value ?: throw FilterException("The value cannot be null for: $operator")
+    }
+
+    private fun canApplyIgnore(operator: Operator): Boolean {
+        return !(operator == Operator.IS_NULL || operator == Operator.IS_NOT_NULL)
     }
 }

@@ -1,22 +1,10 @@
-package io.github.robertomike.baradum.filters;
+package io.github.robertomike.baradum.filters
 
-import io.github.robertomike.hefesto.builders.Hefesto;
+import io.github.robertomike.hefesto.builders.Hefesto
+import java.util.function.BiConsumer
 
-public class CustomFilter extends Filter {
-
-    private final CustomLambda custom;
-
-    public CustomFilter(String field, CustomLambda custom) {
-        super(field, field);
-        this.custom = custom;
-    }
-
-    @Override
-    public void filterByParam(Hefesto<?> query, String value) {
-        custom.apply(query, value);
-    }
-
-    public interface CustomLambda {
-        void apply(Hefesto<?> builder, String value);
+class CustomFilter(field: String, private val consumer: BiConsumer<Hefesto<*>, String>) : Filter<Any>(field, field) {
+    override fun filterByParam(query: Hefesto<*>, value: String) {
+        consumer.accept(query, value)
     }
 }

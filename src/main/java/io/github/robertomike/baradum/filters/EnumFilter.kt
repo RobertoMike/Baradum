@@ -1,53 +1,40 @@
-package io.github.robertomike.baradum.filters;
+package io.github.robertomike.baradum.filters
 
-import io.github.robertomike.baradum.exceptions.FilterException;
-import io.github.robertomike.hefesto.builders.Hefesto;
-import io.github.robertomike.hefesto.enums.Operator;
+import io.github.robertomike.baradum.exceptions.FilterException
+import io.github.robertomike.baradum.utils.valueOf
+import io.github.robertomike.hefesto.builders.Hefesto
+import io.github.robertomike.hefesto.enums.Operator
 
-import java.util.Arrays;
-import java.util.Set;
-import java.util.stream.Collectors;
+class EnumFilter<T : Enum<T>>
+@JvmOverloads constructor(
+    field: String,
+    internalName: String = field,
+    private val classEnum: Class<T>,
+) : Filter<T>(field, internalName) {
 
-public class EnumFilter<T extends Enum<T>> extends Filter {
-    private final Class<T> classEnum;
-
-    public EnumFilter(String field, String internalName, Class<T> classEnum) {
-        super(field, internalName);
-        this.classEnum = classEnum;
-    }
-
-    public EnumFilter(String field, Class<T> classEnum) {
-        super(field, field);
-        this.classEnum = classEnum;
-    }
-
-    @Override
-    public void filterByParam(Hefesto<?> query, String value) {
+    override fun filterByParam(query: Hefesto<*>, value: String) {
         if (value.contains(",")) {
-            Set<T> values = Arrays.stream(value.split(","))
-                    .map(this::transform)
-                    .collect(Collectors.toSet());
+            val values = value.split(",")
+                .map(this::transform)
+                .toSet()
 
-            query.where(internalName, Operator.IN, values);
-            return;
+            query.where(internalName, Operator.IN, values)
+            return
         }
 
-        query.where(internalName, transform(value));
+        query.where(internalName, transform(value))
     }
 
-    public T transform(String value) {
+    override fun transform(value: String): T {
         try {
-            return Enum.valueOf(classEnum, value);
-        } catch (NullPointerException | IllegalArgumentException e) {
-            var allowed = String.join(", ", Arrays.stream(classEnum.getEnumConstants())
-                    .map(Enum::name)
-                    .toArray(String[]::new));
-            throw new FilterException("Invalid value for " + field + ", allowed values: " + allowed);
+            return classEnum.valueOf(value)
+        } catch (e: Exception) {
+            val allowed = classEnum.getEnumConstants().joinToString { it.name }
+            throw FilterException("Invalid value for $field, allowed values: $allowed")
         }
     }
 
-    @Override
-    public boolean supportBodyOperation() {
-        return true;
+    override fun supportBodyOperation(): Boolean {
+        return true
     }
 }

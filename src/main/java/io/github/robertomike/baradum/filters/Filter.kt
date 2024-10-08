@@ -1,103 +1,93 @@
-package io.github.robertomike.baradum.filters;
+package io.github.robertomike.baradum.filters
 
-import io.github.robertomike.baradum.requests.BasicRequest;
-import io.github.robertomike.hefesto.builders.Hefesto;
-import io.github.robertomike.hefesto.enums.Operator;
-import lombok.Getter;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import io.github.robertomike.baradum.requests.BasicRequest
+import io.github.robertomike.hefesto.builders.Hefesto
+import io.github.robertomike.hefesto.enums.Operator
+import lombok.Getter
 
 @Getter
-public abstract class Filter {
-    protected String field;
-    protected String defaultValue = null;
-    protected List<String> ignored = new ArrayList<>();
-    protected String internalName;
+abstract class Filter<T>(val field: String, val internalName: String) {
+    private var defaultValue: String? = null
+    private var ignored: MutableList<String> = ArrayList()
 
-    public Filter(String field, String internalName) {
-        this.field = field;
-        this.internalName = internalName;
+    fun addIgnore(vararg ignored: String): Filter<T> {
+        this.ignored.addAll(listOf(*ignored))
+        return this
     }
 
-    public Filter addIgnore(String... ignored) {
-        this.ignored = List.of(ignored);
-        return this;
+    fun setDefaultValue(defaultValue: String?): Filter<T> {
+        this.defaultValue = defaultValue
+        return this
     }
 
-    public Filter setDefaultValue(String defaultValue) {
-        this.defaultValue = defaultValue;
-        return this;
+    fun ignore(value: String): Boolean {
+        val trimmedValue = value.trim()
+
+        return ignored.any { it == trimmedValue }
     }
 
-    protected boolean ignore(String value) {
-        var val = value.trim();
-
-        return ignored.stream().anyMatch(ignore -> Objects.equals(ignore, val));
-    }
-
-    protected Operator getOperator(String value) {
+    protected fun getOperator(value: String): Operator {
         if (value.contains("<=")) {
-            return Operator.LESS_OR_EQUAL;
+            return Operator.LESS_OR_EQUAL
         } else if (value.contains(">=")) {
-            return Operator.GREATER_OR_EQUAL;
+            return Operator.GREATER_OR_EQUAL
         } else if (value.contains("<>")) {
-            return Operator.DIFF;
+            return Operator.DIFF
         } else if (value.contains(">")) {
-            return Operator.GREATER;
+            return Operator.GREATER
         } else if (value.contains("<")) {
-            return Operator.LESS;
+            return Operator.LESS
         }
 
-        return Operator.EQUAL;
+        return Operator.EQUAL
     }
 
-    protected String cleanValue(String value) {
+    protected fun cleanValue(value: String): String {
         if (value.contains("<=")) {
-            return value.replace("<=", "");
+            return value.replace("<=", "")
         } else if (value.contains(">=")) {
-            return value.replace(">=", "");
+            return value.replace(">=", "")
         } else if (value.contains("<>")) {
-            return value.replace("<>", "");
+            return value.replace("<>", "")
         } else if (value.contains(">")) {
-            return value.replace(">", "");
+            return value.replace(">", "")
         } else if (value.contains("<")) {
-            return value.replace("<", "");
+            return value.replace("<", "")
         }
 
-        return value;
+        return value
     }
 
-    public abstract void filterByParam(Hefesto<?> query, String value);
+    abstract fun filterByParam(query: Hefesto<*>, value: String)
 
-    public void filterByParam(Hefesto<?> query, BasicRequest<?> request) {
+    open fun filterByParam(query: Hefesto<*>, request: BasicRequest<*>) {
         if (request.notExistsByName(field) && defaultValue == null) {
-            return;
+            return
         }
 
-        var parameter = request.findByName(field);
+        var parameter = request.findByName(field)
 
         if (parameter == null) {
-            parameter = defaultValue;
+            parameter = defaultValue
         }
 
         if (parameter == null) {
-            return;
+            return
         }
 
         if (ignore(parameter)) {
-            return;
+            return
         }
 
-        filterByParam(query, parameter);
+        filterByParam(query, parameter)
     }
 
-    public <T> T transform(String value) {
-        return (T) value;
+    @Suppress("UNCHECKED_CAST")
+    open fun transform(value: String): T {
+        return value as T
     }
 
-    public boolean supportBodyOperation() {
-        return false;
+    open fun supportBodyOperation(): Boolean {
+        return false
     }
 }

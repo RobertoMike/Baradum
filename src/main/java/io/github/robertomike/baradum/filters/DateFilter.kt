@@ -1,52 +1,42 @@
-package io.github.robertomike.baradum.filters;
+package io.github.robertomike.baradum.filters
 
-import io.github.robertomike.baradum.exceptions.FilterException;
-import io.github.robertomike.hefesto.builders.Hefesto;
-import io.github.robertomike.hefesto.enums.Operator;
+import io.github.robertomike.baradum.exceptions.FilterException
+import io.github.robertomike.hefesto.builders.Hefesto
+import java.text.SimpleDateFormat
+import java.util.*
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
+class DateFilter @JvmOverloads constructor(field: String, internalName: String = field) : Filter<Date>(field, internalName) {
+    override fun filterByParam(query: Hefesto<*>, value: String) {
+        val operator = getOperator(value)
+        val finalValue = cleanValue(value)
 
-public class DateFilter extends Filter {
-    private static SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
-
-    public static void setFormat(String format) {
-        DateFilter.format = new SimpleDateFormat(format);
-    }
-
-    public DateFilter(String field, String internalName) {
-        super(field, internalName);
-    }
-
-    public DateFilter(String field) {
-        this(field, field);
-    }
-
-    @Override
-    public void filterByParam(Hefesto<?> query, String value) {
-        Operator operator = getOperator(value);
-        value = cleanValue(value);
-
-        Date date = transform(value);
+        val date: Date = transform(finalValue)
 
         query.where(
-                internalName,
-                operator,
-                date
-        );
+            internalName,
+            operator,
+            date
+        )
     }
 
-    @Override
-    public <T> T transform(String value) {
+    override fun transform(value: String): Date {
         try {
-            return (T) format.parse(value);
-        } catch (Exception e) {
-            throw new FilterException("invalid dates");
+            return format.parse(value)
+        } catch (e: Exception) {
+            throw FilterException("invalid dates")
         }
     }
 
-    @Override
-    public boolean supportBodyOperation() {
-        return true;
+    override fun supportBodyOperation(): Boolean {
+        return true
+    }
+
+    companion object {
+        private var format = SimpleDateFormat("yyyy-MM-dd")
+
+        @JvmStatic
+        fun setFormat(format: String) {
+            Companion.format = SimpleDateFormat(format)
+        }
     }
 }

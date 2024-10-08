@@ -241,6 +241,32 @@ public class FilterableByBodyTest {
         assertEquals(WhereOperator.OR, whereEnum.getWhereOperation());
     }
 
+    @BodyRequest("{\"filters\":[{\"subFilters\":[{\"field\":\"id\",\"value\":\"1\",\"operator\":\"GREATER_OR_EQUAL\"},{\"field\":\"id\",\"value\":\"15\",\"operator\":\"LESS_OR_EQUAL\"}]}]}")
+    void allowSubFiltersTryingToMakeInterval(Hefesto<User> hefesto) {
+        Baradum.make(User.class)
+                .allowedFilters("id")
+                .useBody()
+                .get();
+
+        ArgumentCaptor<BaseWhere> argument = ArgumentCaptor.forClass(BaseWhere.class);
+
+        verify(hefesto).where(argument.capture());
+
+        var wheres = (CollectionWhere) argument.getValue();
+        var whereGreater = (Where) wheres.getWheres().get(0);
+        var whereLess = (Where) wheres.getWheres().get(1);
+
+        assertEquals("id", whereGreater.getField());
+        assertEquals("1", whereGreater.getValue());
+        assertEquals(Operator.GREATER_OR_EQUAL, whereGreater.getOperator());
+        assertEquals(WhereOperator.AND, whereGreater.getWhereOperation());
+
+        assertEquals("id", whereLess.getField());
+        assertEquals("15", whereLess.getValue());
+        assertEquals(Operator.LESS_OR_EQUAL, whereLess.getOperator());
+        assertEquals(WhereOperator.AND, whereLess.getWhereOperation());
+    }
+
     @BodyRequest("{\"filters\":[{\"field\":\"id\",\"value\":\"1\",\"operator\":\"EQUAL\"},{\"field\":\"name\",\"value\":\"abc%\",\"operator\":\"LIKE\"}]}")
     void notAllowedFilter() {
         assertThrows(FilterException.class, () ->
