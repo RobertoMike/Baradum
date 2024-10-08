@@ -176,20 +176,16 @@ class Baradum<T: BaseModel>(model: Class<T>): ConditionalBuilder<Baradum<T>, Con
      * If the `onlyBody` is true and the request is not a POST, an exception will be thrown.
      */
     private fun apply() {
-        if (request.method != "POST" && onlyBody) {
+        if (!request.isPost() && onlyBody) {
             throw BaradumException("Body can only be used with POST requests")
         }
 
-        if (useBody && request.method == "POST") {
-            val body = request.loadBodyAndGet() ?: throw BaradumException("No body in request")
+        if (useBody && request.isPost()) {
+            val body = request.getBody() ?: throw BaradumException("No body in request")
 
             filterable.apply(builder, body.filters)
             sortable.apply(builder, body.sorts)
-
-            // Clean body
-            request.cleanBody()
             return
-
         }
 
         filterable.apply(builder, request)

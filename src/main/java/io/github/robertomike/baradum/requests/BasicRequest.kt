@@ -1,19 +1,13 @@
 package io.github.robertomike.baradum.requests
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import io.github.robertomike.baradum.Baradum
 import io.github.robertomike.baradum.exceptions.BaradumException
-import lombok.SneakyThrows
-import lombok.extern.log4j.Log4j
-import lombok.extern.log4j.Log4j2
-import lombok.extern.slf4j.Slf4j
 import java.io.BufferedReader
 import java.io.IOException
 import java.util.stream.Collectors
 
 abstract class BasicRequest<T>(val request: T) {
     private val mapper = ObjectMapper()
-    var bodyRequest: BodyRequest? = null
 
     /**
      * Finds a parameter by name.
@@ -47,30 +41,21 @@ abstract class BasicRequest<T>(val request: T) {
 
     abstract val method: String
 
+    fun isPost(): Boolean {
+        return method == "POST"
+    }
+
     @get:Throws(IOException::class)
     abstract val reader: BufferedReader
 
-    fun loadBodyAndGet(): BodyRequest? {
-        loadBody()
-        return bodyRequest
-    }
-
-    fun loadBody() {
-        if (bodyRequest != null) {
-            return
-        }
-
+    fun getBody(): BodyRequest? {
         try {
-            bodyRequest = mapper.readValue(
+            return mapper.readValue(
                 reader.lines().collect(Collectors.joining(System.lineSeparator())),
                 BodyRequest::class.java
             )
         } catch (e: Exception) {
             throw BaradumException("Error reading body request", e)
         }
-    }
-
-    fun cleanBody() {
-        bodyRequest = null
     }
 }

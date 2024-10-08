@@ -96,6 +96,7 @@ public class TestConfig implements BeforeAllCallback, BeforeEachCallback, Extens
 
         when(basicRequest.notExistsByName("sort")).thenReturn(true);
         when(basicRequest.getMethod()).thenReturn("GET");
+        when(basicRequest.isPost()).thenReturn(false);
 
         var method = context.getRequiredTestMethod();
         if (method == null) {
@@ -109,7 +110,8 @@ public class TestConfig implements BeforeAllCallback, BeforeEachCallback, Extens
             }
             if (annotation instanceof BodyRequest body) {
                 when(basicRequest.getMethod()).thenReturn("POST");
-                when(basicRequest.loadBodyAndGet()).thenReturn(mapper.readValue(
+                when(basicRequest.isPost()).thenReturn(true);
+                when(basicRequest.getBody()).thenReturn(mapper.readValue(
                         body.value(), io.github.robertomike.baradum.requests.BodyRequest.class
                 ));
             }

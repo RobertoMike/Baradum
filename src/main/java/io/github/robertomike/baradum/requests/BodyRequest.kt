@@ -1,6 +1,6 @@
 package io.github.robertomike.baradum.requests
 
-class BodyRequest {
-    var filters: List<FilterRequest> = ArrayList()
+data class BodyRequest @JvmOverloads constructor(
+    var filters: List<FilterRequest> = ArrayList(),
     var sorts: List<OrderRequest> = ArrayList()
-}
+)
