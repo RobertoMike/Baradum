@@ -1,6 +1,5 @@
 package io.github.robertomike.baradum
 
-
 import io.github.robertomike.baradum.exceptions.BaradumException
 import io.github.robertomike.baradum.filters.Filter
 import io.github.robertomike.baradum.filters.Filterable
@@ -16,7 +15,7 @@ import io.github.robertomike.hefesto.utils.Page
 import java.util.Optional
 import java.util.function.Consumer
 
-class Baradum<T: BaseModel>(model: Class<T>): ConditionalBuilder<Baradum<T>, ConstructWhereImplementation> {
+class Baradum<T: BaseModel>(model: Class<T>): ConditionalBuilder<Baradum<T>> {
     private var builder: Hefesto<T> = Hefesto.make(model)
     private var sortable = Sortable()
     private var filterable = Filterable()
@@ -24,7 +23,7 @@ class Baradum<T: BaseModel>(model: Class<T>): ConditionalBuilder<Baradum<T>, Con
     private var onlyBody = false
 
     companion object {
-        private lateinit var request: BasicRequest<out Any>
+        private lateinit var request: BasicRequest<*>
 
         /**
          * Setting the request for Baradum resolve params and body
@@ -32,7 +31,7 @@ class Baradum<T: BaseModel>(model: Class<T>): ConditionalBuilder<Baradum<T>, Con
          * @param request Need to extend BasicRequest to support many frameworks
          */
         @JvmStatic
-        fun setRequest(request: BasicRequest<out Any>) {
+        fun setRequest(request: BasicRequest<*>) {
             Baradum.request = request
         }
 
@@ -121,7 +120,7 @@ class Baradum<T: BaseModel>(model: Class<T>): ConditionalBuilder<Baradum<T>, Con
      * @return the current instance
      */
     fun selects(vararg selects: String): Baradum<T> {
-        builder.select(*selects)
+        builder.setSelects(*selects)
         return this
     }
 
@@ -247,7 +246,7 @@ class Baradum<T: BaseModel>(model: Class<T>): ConditionalBuilder<Baradum<T>, Con
     /**
      * Sets up the builder for creating a {@link Hefesto} object.
      *
-     * @param consumer a consumer function that takes a {@link Hefesto} object as input and performs some operations on it.
+     * @param lambda a consumer function that takes a {@link Hefesto} object as input and performs some operations on it.
      * @param <T>      the type parameter for the {@link Hefesto} object.
      */
     fun builder(lambda: Consumer<Hefesto<T>>): Baradum<T>  {

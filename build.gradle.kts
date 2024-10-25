@@ -1,5 +1,5 @@
 plugins {
-    kotlin("jvm") version "1.9.23"
+    kotlin("jvm") version "2.0.21"
 
     id("java-library")
     id("maven-publish")
@@ -7,19 +7,20 @@ plugins {
 }
 
 group = "io.github.robertomike"
-version = "2.1.0"
+version = "1.1.0"
 
 repositories {
     mavenCentral()
+    mavenLocal()
 }
 
 var jdkCompileVersion = 17
 
 dependencies {
-    implementation("io.github.robertomike:hefesto-hibernate:2.0.0")
+    implementation("io.github.robertomike:hefesto-hibernate:1.1.1")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.14.0")
 
-    api("io.github.robertomike:hefesto-hibernate:2.0.0")
+    api("io.github.robertomike:hefesto-hibernate:1.0.0")
     api("com.fasterxml.jackson.core:jackson-databind:2.14.0")
 
     compileOnly("org.projectlombok:lombok:1.18.20")

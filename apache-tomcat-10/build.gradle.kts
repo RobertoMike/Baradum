@@ -1,12 +1,12 @@
 plugins {
-    kotlin("jvm") version "1.9.23"
+    kotlin("jvm") version "2.0.21"
     id("java-library")
     id("maven-publish")
     id("signing")
 }
 
 group = "io.github.robertomike"
-version = "2.0.1"
+version = "2.0.2"
 
 repositories {
     mavenCentral()
