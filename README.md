@@ -40,7 +40,7 @@ Maven
 <dependency>
     <groupId>io.github.robertomike</groupId>
     <artifactId>baradum</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
 </dependency>
 ```
 Gradle
@@ -60,16 +60,16 @@ Maven
     <artifactId>baradum-apache-tomcat-9</artifactId>
     <!--  For spring boot 3  -->
     <artifactId>baradum-apache-tomcat-10</artifactId>
-    <version>1.0.1</version>
+    <version>2.0.1</version>
 </dependency>
 ```
 Gradle
 ```gradle
 dependencies {
     // Spring boot 2
-    implementation 'io.github.robertomike:baradum-apache-tomcat-9:1.0.1'
+    implementation 'io.github.robertomike:baradum-apache-tomcat-9:2.0.1'
     // Spring boot 3
-    implementation 'io.github.robertomike:baradum-apache-tomcat-10:1.0.1'
+    implementation 'io.github.robertomike:baradum-apache-tomcat-10:2.0.1'
 }
 ```
 

@@ -55,7 +55,7 @@ public class BaradumTest {
     void tryingToUseBodyWithParams() {
         assertThrows(BaradumException.class, () ->
                 Baradum.make(User.class)
-                        .useBody()
+                        .useOnlyBody()
                         .get()
         );
     }

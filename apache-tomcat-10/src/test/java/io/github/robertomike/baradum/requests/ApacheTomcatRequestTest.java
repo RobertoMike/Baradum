@@ -29,9 +29,7 @@ class ApacheTomcatRequestTest {
         when(request.getReader()).thenReturn(reader);
         when(reader.lines()).thenReturn(Stream.of("{\"filters\":[{\"field\":\"id\",\"value\":\"1\",\"operator\":\"EQUAL\"},{\"field\":\"name\",\"value\":\"abc%\",\"operator\":\"LIKE\",\"type\":\"OR\"},{\"subFilters\":[{\"field\":\"id\",\"value\":\"1\",\"operator\":\"EQUAL\"},{\"field\":\"name\",\"value\":\"abc%\",\"operator\":\"LIKE\",\"type\":\"OR\"}]}],\"sorts\":[{\"field\":\"id\"},{\"field\":\"name\",\"sort\":\"DESC\"}]}"));
 
-        apacheTomcatRequest.loadBody();
-
-        var body = apacheTomcatRequest.getBodyRequest();
+        var body = apacheTomcatRequest.getBody();
 
         assertNotNull(body);
         assertNotNull(body.getFilters());
@@ -63,15 +61,6 @@ class ApacheTomcatRequestTest {
         when(request.getMethod()).thenReturn("GET");
 
         assertEquals("GET", apacheTomcatRequest.getMethod());
-    }
-
-    @Test
-    void cleanBody() {
-        apacheTomcatRequest.setBodyRequest(new BodyRequest());
-
-        apacheTomcatRequest.cleanBody();
-
-        assertNull(apacheTomcatRequest.getBodyRequest());
     }
 
     @Test

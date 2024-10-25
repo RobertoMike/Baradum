@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.robertomike.baradum.Baradum;
 import io.github.robertomike.baradum.requests.BasicRequest;
 import io.github.robertomike.hefesto.builders.Hefesto;
+import io.github.robertomike.hefesto.constructors.ConstructWhereImplementation;
 import org.junit.jupiter.api.extension.*;
 import org.mockito.MockedStatic;
 
@@ -22,9 +23,10 @@ public class TestConfig implements BeforeAllCallback, BeforeEachCallback, Extens
     private static final Lock LOCK = new ReentrantLock();
     private static final ExtensionContext.Namespace NAMESPACE = ExtensionContext.Namespace.GLOBAL;
     private static MockedStatic<Hefesto> hefestoMockedStatic;
-    private static Hefesto hefesto;
-    private static BasicRequest basicRequest;
-    private ObjectMapper mapper = new ObjectMapper();
+    private static Hefesto<?> hefesto;
+    private static ConstructWhereImplementation constructWhereImplementation;
+    private static BasicRequest<?> basicRequest;
+    private final ObjectMapper mapper = new ObjectMapper();
     /**
      * volatile boolean to tell other threads, when unblocked, whether they should try attempt start-up.  Alternatively, could use AtomicBoolean.
      */
@@ -37,9 +39,11 @@ public class TestConfig implements BeforeAllCallback, BeforeEachCallback, Extens
         try {
             if (!started) {
                 started = true;
+
                 hefestoMockedStatic = mockStatic(Hefesto.class);
                 hefesto = mock(Hefesto.class);
                 basicRequest = mock(BasicRequest.class);
+                constructWhereImplementation = mock(ConstructWhereImplementation.class);
 
                 hefestoMockedStatic.when(() -> Hefesto.make(any())).thenReturn(hefesto);
 
@@ -57,6 +61,7 @@ public class TestConfig implements BeforeAllCallback, BeforeEachCallback, Extens
         var globalStore = context.getStore(NAMESPACE);
         globalStore.put("BasicRequest", basicRequest);
         globalStore.put("Hefesto", hefesto);
+        globalStore.put("ConstructWhereImplementation", constructWhereImplementation);
     }
 
     @Override
@@ -80,12 +85,18 @@ public class TestConfig implements BeforeAllCallback, BeforeEachCallback, Extens
                 .get(getSimpleName(parameterContext));
     }
 
+    public void initForHefesto() {
+        when(hefesto.getWheres()).thenReturn(constructWhereImplementation);
+    }
+
     @Override
     public void beforeEach(ExtensionContext context) throws JsonProcessingException {
         reset(hefesto, basicRequest);
+        initForHefesto();
 
         when(basicRequest.notExistsByName("sort")).thenReturn(true);
         when(basicRequest.getMethod()).thenReturn("GET");
+        when(basicRequest.isPost()).thenReturn(false);
 
         var method = context.getRequiredTestMethod();
         if (method == null) {
@@ -99,7 +110,8 @@ public class TestConfig implements BeforeAllCallback, BeforeEachCallback, Extens
             }
             if (annotation instanceof BodyRequest body) {
                 when(basicRequest.getMethod()).thenReturn("POST");
-                when(basicRequest.getBodyRequest()).thenReturn(mapper.readValue(
+                when(basicRequest.isPost()).thenReturn(true);
+                when(basicRequest.getBody()).thenReturn(mapper.readValue(
                         body.value(), io.github.robertomike.baradum.requests.BodyRequest.class
                 ));
             }
