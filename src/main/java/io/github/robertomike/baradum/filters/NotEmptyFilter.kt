@@ -5,9 +5,9 @@ import io.github.robertomike.hefesto.actions.wheres.Where
 import io.github.robertomike.hefesto.builders.Hefesto
 import io.github.robertomike.hefesto.enums.Operator
 
-class NotEmptyFilter @JvmOverloads constructor(field: String, internalName: String = field) : Filter<Any>(field, internalName) {
+class NotEmptyFilter @JvmOverloads constructor(param: String, internalName: String = param) : Filter<Any>(param, internalName) {
     override fun filterByParam(query: Hefesto<*>, request: BasicRequest<*>) {
-        if (request.findByName(field) != null) {
+        if (request.findByName(param) != null) {
             filterByParam(query, "")
         }
     }

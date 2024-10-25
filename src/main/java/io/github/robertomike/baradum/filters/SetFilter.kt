@@ -9,11 +9,11 @@ import io.github.robertomike.hefesto.enums.WhereOperator
 
 class SetFilter<T : Enum<T>>
 @JvmOverloads constructor(
-    field: String,
-    internalName: String = field,
+    param: String,
+    internalName: String = param,
     private val classEnum: Class<T>,
     private val not: Boolean = true
-) : Filter<T>(field, internalName) {
+) : Filter<T>(param, internalName) {
 
     constructor(field: String, classEnum: Class<T>, not: Boolean = true) : this(
         field,

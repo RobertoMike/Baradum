@@ -52,7 +52,7 @@ class Filterable {
 
     private fun searchFilterAndExecute(filterRequest: FilterRequest): BaseWhere? {
         val filter = allowedFilters
-            .firstOrNull { it.field == filterRequest.field }
+            .firstOrNull { it.param == filterRequest.field }
             ?: throw FilterException("The field '${filterRequest.field}' is not allowed")
 
         if (!filter.supportBodyOperation()) {

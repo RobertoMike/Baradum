@@ -98,9 +98,11 @@ publishing {
     }
 }
 
-signing {
-    setRequired { !version.toString().endsWith("SNAPSHOT") }
-    sign(publishing.publications["library"])
+if (!project.hasProperty("local")) {
+    signing {
+        setRequired { !version.toString().endsWith("SNAPSHOT") }
+        sign(publishing.publications["library"])
+    }
 }
 
 tasks.withType(JavaCompile::class).configureEach {

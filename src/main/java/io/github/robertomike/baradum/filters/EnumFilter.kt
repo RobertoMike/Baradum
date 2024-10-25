@@ -7,10 +7,10 @@ import io.github.robertomike.hefesto.enums.Operator
 
 class EnumFilter<T : Enum<T>>
 @JvmOverloads constructor(
-    field: String,
-    internalName: String = field,
+    param: String,
+    internalName: String = param,
     private val classEnum: Class<T>,
-) : Filter<T>(field, internalName) {
+) : Filter<T>(param, internalName) {
 
     override fun filterByParam(query: Hefesto<*>, value: String) {
         if (value.contains(",")) {
@@ -30,7 +30,7 @@ class EnumFilter<T : Enum<T>>
             return classEnum.valueOf(value)
         } catch (e: Exception) {
             val allowed = classEnum.getEnumConstants().joinToString { it.name }
-            throw FilterException("Invalid value for $field, allowed values: $allowed")
+            throw FilterException("Invalid value for $param, allowed values: $allowed")
         }
     }
 

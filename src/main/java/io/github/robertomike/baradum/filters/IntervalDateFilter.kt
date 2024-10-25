@@ -6,7 +6,7 @@ import io.github.robertomike.hefesto.enums.Operator
 import java.text.SimpleDateFormat
 import java.util.*
 
-class IntervalDateFilter @JvmOverloads constructor(field: String, internalName: String = field) : Filter<Date>(field, internalName) {
+class IntervalDateFilter @JvmOverloads constructor(param: String, internalName: String = param) : Filter<Date>(param, internalName) {
     override fun filterByParam(query: Hefesto<*>, value: String) {
         lateinit var startDate: String
         var endDate: Date? = null

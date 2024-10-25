@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "io.github.robertomike"
-version = "1.0.0"
+version = "2.0.1"
 
 repositories {
     mavenCentral()
@@ -89,9 +89,11 @@ publishing {
     }
 }
 
-signing {
-    setRequired { !version.toString().endsWith("SNAPSHOT") }
-    sign(publishing.publications["library"])
+if (!project.hasProperty("local")) {
+    signing {
+        setRequired { !version.toString().endsWith("SNAPSHOT") }
+        sign(publishing.publications["library"])
+    }
 }
 
 tasks.withType(JavaCompile::class).configureEach {

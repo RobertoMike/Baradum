@@ -14,6 +14,7 @@ import io.github.robertomike.hefesto.models.BaseModel
 import io.github.robertomike.hefesto.utils.ConditionalBuilder
 import io.github.robertomike.hefesto.utils.Page
 import java.util.Optional
+import java.util.function.Consumer
 
 class Baradum<T: BaseModel>(model: Class<T>): ConditionalBuilder<Baradum<T>, ConstructWhereImplementation> {
     private var builder: Hefesto<T> = Hefesto.make(model)
@@ -25,6 +26,11 @@ class Baradum<T: BaseModel>(model: Class<T>): ConditionalBuilder<Baradum<T>, Con
     companion object {
         private lateinit var request: BasicRequest<out Any>
 
+        /**
+         * Setting the request for Baradum resolve params and body
+         *
+         * @param request Need to extend BasicRequest to support many frameworks
+         */
         @JvmStatic
         fun setRequest(request: BasicRequest<out Any>) {
             Baradum.request = request
@@ -236,5 +242,16 @@ class Baradum<T: BaseModel>(model: Class<T>): ConditionalBuilder<Baradum<T>, Con
 
     override fun getWheres(): ConstructWhereImplementation {
         return builder.wheres
+    }
+
+    /**
+     * Sets up the builder for creating a {@link Hefesto} object.
+     *
+     * @param consumer a consumer function that takes a {@link Hefesto} object as input and performs some operations on it.
+     * @param <T>      the type parameter for the {@link Hefesto} object.
+     */
+    fun builder(lambda: Consumer<Hefesto<T>>): Baradum<T>  {
+        lambda.accept(builder)
+        return this
     }
 }

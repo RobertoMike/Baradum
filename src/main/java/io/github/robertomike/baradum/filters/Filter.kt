@@ -6,7 +6,7 @@ import io.github.robertomike.hefesto.enums.Operator
 import lombok.Getter
 
 @Getter
-abstract class Filter<T>(val field: String, val internalName: String) {
+abstract class Filter<T>(val param: String, val internalName: String) {
     private var defaultValue: String? = null
     private var ignored: MutableList<String> = ArrayList()
 
@@ -61,11 +61,11 @@ abstract class Filter<T>(val field: String, val internalName: String) {
     abstract fun filterByParam(query: Hefesto<*>, value: String)
 
     open fun filterByParam(query: Hefesto<*>, request: BasicRequest<*>) {
-        if (request.notExistsByName(field) && defaultValue == null) {
+        if (request.notExistsByName(param) && defaultValue == null) {
             return
         }
 
-        var parameter = request.findByName(field)
+        var parameter = request.findByName(param)
 
         if (parameter == null) {
             parameter = defaultValue
