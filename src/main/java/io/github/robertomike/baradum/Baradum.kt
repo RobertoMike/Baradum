@@ -15,8 +15,8 @@ import io.github.robertomike.hefesto.utils.Page
 import java.util.Optional
 import java.util.function.Consumer
 
-class Baradum<T: BaseModel>(model: Class<T>): ConditionalBuilder<Baradum<T>> {
-    private var builder: Hefesto<T> = Hefesto.make(model)
+open class Baradum<T: BaseModel>(model: Class<T>): ConditionalBuilder<Baradum<T>> {
+    val builder: Hefesto<T> = Hefesto.make(model)
     private var sortable = Sortable()
     private var filterable = Filterable()
     private var useBody = false
