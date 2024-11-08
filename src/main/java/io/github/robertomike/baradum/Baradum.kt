@@ -27,8 +27,7 @@ class Baradum<T: BaseModel>(model: Class<T>): ConditionalBuilder<Baradum<T>> {
         /**
          * request for Baradum resolve params and body
          */
-        var request: BasicRequest<out Any>? = null
-            @JvmStatic set
+        @JvmStatic var request: BasicRequest<out Any>? = null
 
         /**
          * Creates a new instance of Baradum with the specified model class.
