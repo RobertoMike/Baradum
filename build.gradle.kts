@@ -16,7 +16,7 @@ repositories {
 var jdkCompileVersion = 17
 
 dependencies {
-    implementation("io.github.robertomike:hefesto-hibernate:2.0.0")
+    implementation("io.github.robertomike:hefesto-hibernate:2.1.2")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.14.0")
 
     api("io.github.robertomike:hefesto-hibernate:2.0.0")

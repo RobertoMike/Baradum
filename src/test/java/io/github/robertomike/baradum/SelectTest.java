@@ -4,13 +4,8 @@ import io.github.robertomike.baradum.configs.CustomTest;
 import io.github.robertomike.baradum.models.User;
 import io.github.robertomike.hefesto.actions.Select;
 import io.github.robertomike.hefesto.builders.Hefesto;
-import io.github.robertomike.hefesto.utils.Page;
 import org.junit.jupiter.api.Test;
 
-import java.util.Collections;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.*;
 
 @CustomTest
@@ -21,7 +16,7 @@ public class SelectTest {
         Baradum.make(User.class)
                 .selects("name", "email");
 
-        verify(hefesto).select("name", "email");
+        verify(hefesto).setSelects("name", "email");
     }
 
     @Test

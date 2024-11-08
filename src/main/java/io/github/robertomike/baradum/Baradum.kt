@@ -16,7 +16,7 @@ import io.github.robertomike.hefesto.utils.Page
 import java.util.Optional
 import java.util.function.Consumer
 
-class Baradum<T: BaseModel>(model: Class<T>): ConditionalBuilder<Baradum<T>, ConstructWhereImplementation> {
+class Baradum<T: BaseModel>(model: Class<T>): ConditionalBuilder<Baradum<T>> {
     private var builder: Hefesto<T> = Hefesto.make(model)
     private var sortable = Sortable()
     private var filterable = Filterable()
@@ -24,17 +24,11 @@ class Baradum<T: BaseModel>(model: Class<T>): ConditionalBuilder<Baradum<T>, Con
     private var onlyBody = false
 
     companion object {
-        private lateinit var request: BasicRequest<out Any>
-
         /**
-         * Setting the request for Baradum resolve params and body
-         *
-         * @param request Need to extend BasicRequest to support many frameworks
+         * request for Baradum resolve params and body
          */
-        @JvmStatic
-        fun setRequest(request: BasicRequest<out Any>) {
-            Baradum.request = request
-        }
+        var request: BasicRequest<out Any>? = null
+            @JvmStatic set
 
         /**
          * Creates a new instance of Baradum with the specified model class.
@@ -121,7 +115,7 @@ class Baradum<T: BaseModel>(model: Class<T>): ConditionalBuilder<Baradum<T>, Con
      * @return the current instance
      */
     fun selects(vararg selects: String): Baradum<T> {
-        builder.select(*selects)
+        builder.setSelects(*selects)
         return this
     }
 
@@ -182,20 +176,26 @@ class Baradum<T: BaseModel>(model: Class<T>): ConditionalBuilder<Baradum<T>, Con
      * If the `onlyBody` is true and the request is not a POST, an exception will be thrown.
      */
     private fun apply() {
-        if (!request.isPost() && onlyBody) {
+        val localRequest = request
+
+        if (localRequest == null) {
+            throw BaradumException("Request is null")
+        }
+
+        if (!localRequest.isPost() && onlyBody) {
             throw BaradumException("Body can only be used with POST requests")
         }
 
-        if (useBody && request.isPost()) {
-            val body = request.getBody() ?: throw BaradumException("No body in request")
+        if (useBody && localRequest.isPost()) {
+            val body = localRequest.getBody() ?: throw BaradumException("No body in request")
 
             filterable.apply(builder, body.filters)
             sortable.apply(builder, body.sorts)
             return
         }
 
-        filterable.apply(builder, request)
-        sortable.apply(builder, request)
+        filterable.apply(builder, localRequest)
+        sortable.apply(builder, localRequest)
     }
 
     /**
