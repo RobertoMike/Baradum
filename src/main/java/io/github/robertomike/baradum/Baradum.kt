@@ -179,7 +179,7 @@ open class Baradum<T: BaseModel>(model: Class<T>): ConditionalBuilder<Baradum<T>
         }
 
         if (useBody && request.isPost()) {
-            val body = request.getBody() ?: throw BaradumException("No body in request")
+            val body = request.getBody()
 
             filterable.apply(builder, body.filters)
             sortable.apply(builder, body.sorts)

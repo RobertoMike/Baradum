@@ -1,7 +1,6 @@
 package baradum.requests;
 
 import io.github.robertomike.baradum.requests.ApacheTomcatRequest;
-import io.github.robertomike.baradum.requests.BodyRequest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -69,11 +68,12 @@ class ApacheTomcatRequestTest {
     void getReader() throws IOException {
         var reader = mock(BufferedReader.class);
 
+        when(reader.lines()).thenReturn(Stream.of("{}"));
         when(request.getReader()).thenReturn(reader);
 
-        var readerResult = apacheTomcatRequest.getReader();
+        var readerResult = apacheTomcatRequest.getJson();
 
         assertNotNull(readerResult);
-        assertEquals(reader, readerResult);
+        assertEquals("{}", readerResult);
     }
 }

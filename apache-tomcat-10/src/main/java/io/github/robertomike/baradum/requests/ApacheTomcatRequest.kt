@@ -1,8 +1,7 @@
 package io.github.robertomike.baradum.requests
 
 import jakarta.servlet.http.HttpServletRequest
-import java.io.BufferedReader
-import java.io.IOException
+import java.util.stream.Collectors
 
 class ApacheTomcatRequest(request: HttpServletRequest) : BasicRequest<HttpServletRequest>(request) {
     override fun findParamByName(name: String): String? {
@@ -12,7 +11,6 @@ class ApacheTomcatRequest(request: HttpServletRequest) : BasicRequest<HttpServle
     override val method: String
         get() = request.method
 
-    @get:Throws(IOException::class)
-    override val reader: BufferedReader
-        get() = request.reader
+    override val json: String
+        get() = request.reader.lines().collect(Collectors.joining(System.lineSeparator()))
 }

@@ -1,5 +1,6 @@
 package io.github.robertomike.baradum.requests;
 
+import io.github.robertomike.baradum.exceptions.BaradumException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -38,6 +39,19 @@ class ApacheTomcatRequestTest {
     }
 
     @Test
+    void loadNullBody() throws IOException {
+        var reader = mock(BufferedReader.class);
+
+        when(request.getReader()).thenReturn(reader);
+        when(reader.lines()).thenReturn(null);
+
+        assertThrows(
+                BaradumException.class,
+                () -> apacheTomcatRequest.getBody()
+        );
+    }
+
+    @Test
     void findParamByName() {
         when(request.getParameter("name")).thenReturn("value");
 
@@ -67,12 +81,13 @@ class ApacheTomcatRequestTest {
     void getReader() throws IOException {
         var reader = mock(BufferedReader.class);
 
+        when(reader.lines()).thenReturn(Stream.of("{}"));
         when(request.getReader()).thenReturn(reader);
 
-        var readerResult = apacheTomcatRequest.getReader();
+        var readerResult = apacheTomcatRequest.getJson();
 
         assertNotNull(readerResult);
-        assertEquals(reader, readerResult);
+        assertEquals("{}", readerResult);
     }
 
     @Test

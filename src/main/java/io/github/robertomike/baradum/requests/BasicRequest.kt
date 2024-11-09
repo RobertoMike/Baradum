@@ -45,15 +45,11 @@ abstract class BasicRequest<T>(val request: T) {
         return method == "POST"
     }
 
-    @get:Throws(IOException::class)
-    abstract val reader: BufferedReader
+    abstract val json: String
 
-    fun getBody(): BodyRequest? {
+    fun getBody(): BodyRequest {
         try {
-            return mapper.readValue(
-                reader.lines().collect(Collectors.joining(System.lineSeparator())),
-                BodyRequest::class.java
-            )
+            return mapper.readValue(json, BodyRequest::class.java)
         } catch (e: Exception) {
             throw BaradumException("Error reading body request", e)
         }
