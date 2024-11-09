@@ -1,6 +1,5 @@
 package io.github.robertomike.baradum
 
-
 import io.github.robertomike.baradum.exceptions.BaradumException
 import io.github.robertomike.baradum.filters.Filter
 import io.github.robertomike.baradum.filters.Filterable
@@ -27,7 +26,7 @@ class Baradum<T: BaseModel>(model: Class<T>): ConditionalBuilder<Baradum<T>> {
         /**
          * request for Baradum resolve params and body
          */
-        @JvmStatic var request: BasicRequest<out Any>? = null
+        @JvmStatic lateinit var request: BasicRequest<out Any>
 
         /**
          * Creates a new instance of Baradum with the specified model class.
@@ -175,26 +174,20 @@ class Baradum<T: BaseModel>(model: Class<T>): ConditionalBuilder<Baradum<T>> {
      * If the `onlyBody` is true and the request is not a POST, an exception will be thrown.
      */
     private fun apply() {
-        val localRequest = request
-
-        if (localRequest == null) {
-            throw BaradumException("Request is null")
-        }
-
-        if (!localRequest.isPost() && onlyBody) {
+        if (!request.isPost() && onlyBody) {
             throw BaradumException("Body can only be used with POST requests")
         }
 
-        if (useBody && localRequest.isPost()) {
-            val body = localRequest.getBody() ?: throw BaradumException("No body in request")
+        if (useBody && request.isPost()) {
+            val body = request.getBody() ?: throw BaradumException("No body in request")
 
             filterable.apply(builder, body.filters)
             sortable.apply(builder, body.sorts)
             return
         }
 
-        filterable.apply(builder, localRequest)
-        sortable.apply(builder, localRequest)
+        filterable.apply(builder, request)
+        sortable.apply(builder, request)
     }
 
     /**
