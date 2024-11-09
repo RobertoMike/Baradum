@@ -10,6 +10,11 @@ class SearchFilter(param: String, vararg fields: String) : Filter<Any>(
 ) {
     private val fields = setOf(*fields)
 
+    companion object {
+        @JvmStatic
+        fun of(vararg fields: String) = SearchFilter("search", *fields)
+    }
+
     override fun filterByParam(query: Hefesto<*>, value: String) {
         query.where(
             fields.map { Where(it, Operator.LIKE, "$value%", WhereOperator.OR) }

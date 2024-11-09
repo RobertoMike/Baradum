@@ -23,17 +23,10 @@ open class Baradum<T: BaseModel>(model: Class<T>): ConditionalBuilder<Baradum<T>
     private var onlyBody = false
 
     companion object {
-        private lateinit var request: BasicRequest<*>
-
         /**
-         * Setting the request for Baradum resolve params and body
-         *
-         * @param request Need to extend BasicRequest to support many frameworks
+         * request for Baradum resolve params and body
          */
-        @JvmStatic
-        fun setRequest(request: BasicRequest<*>) {
-            Baradum.request = request
-        }
+        @JvmStatic lateinit var request: BasicRequest<out Any>
 
         /**
          * Creates a new instance of Baradum with the specified model class.
