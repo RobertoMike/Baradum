@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "io.github.robertomike"
-version = "1.0.2"
+version = "1.0.1"
 
 repositories {
     mavenCentral()
@@ -76,7 +76,7 @@ publishing {
     repositories {
         maven {
 
-            name = "central_repository_ossrh"
+            name = "OSSRH"
             url = uri("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/")
             credentials {
                 username = System.getenv("OSSRH_USERNAME")
