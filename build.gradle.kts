@@ -7,19 +7,20 @@ plugins {
 }
 
 group = "io.github.robertomike"
-version = "2.1.0"
+version = "2.1.1"
 
 repositories {
     mavenCentral()
 }
 
 var jdkCompileVersion = 17
+var hefestoVersion = "2.1.2"
 
 dependencies {
-    implementation("io.github.robertomike:hefesto-hibernate:2.1.2")
+    implementation("io.github.robertomike:hefesto-hibernate:$hefestoVersion")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.14.0")
 
-    api("io.github.robertomike:hefesto-hibernate:2.0.0")
+    api("io.github.robertomike:hefesto-hibernate:$hefestoVersion")
     api("com.fasterxml.jackson.core:jackson-databind:2.14.0")
 
     compileOnly("org.projectlombok:lombok:1.18.20")
