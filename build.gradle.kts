@@ -14,12 +14,13 @@ repositories {
 }
 
 var jdkCompileVersion = 17
+var hefestoVersion = "1.1.1"
 
 dependencies {
-    implementation("io.github.robertomike:hefesto-hibernate:1.1.1")
+    implementation("io.github.robertomike:hefesto-hibernate:$hefestoVersion")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.14.0")
 
-    api("io.github.robertomike:hefesto-hibernate:1.0.0")
+    api("io.github.robertomike:hefesto-hibernate:$hefestoVersion")
     api("com.fasterxml.jackson.core:jackson-databind:2.14.0")
 
     compileOnly("org.projectlombok:lombok:1.18.20")
