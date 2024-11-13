@@ -9,8 +9,7 @@
         <option name="modules">
           <set>
             <option value="$PROJECT_DIR$" />
-            <option value="$PROJECT_DIR$/apache-tomcat-10" />
-            <option value="$PROJECT_DIR$/apache-tomcat-9" />
+            <option value="$PROJECT_DIR$/apache-tomcat" />
           </set>
         </option>
       </GradleProjectSettings>
