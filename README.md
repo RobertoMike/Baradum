@@ -40,13 +40,13 @@ Maven
 <dependency>
     <groupId>io.github.robertomike</groupId>
     <artifactId>baradum</artifactId>
-    <version>1.0.1</version>
+    <version>1.1.1</version>
 </dependency>
 ```
 Gradle
 ```gradle
 dependencies {
-    implementation 'io.github.robertomike:baradum:1.0.1'
+    implementation 'io.github.robertomike:baradum:1.1.1'
 }
 ```
 
@@ -54,22 +54,23 @@ If you want use it on Spring boot 2, 3 or with apache tomcat you need to use
 
 Maven
 ```xml
+
 <dependency>
-    <groupId>io.github.robertomike</groupId>
-    <!--  For spring boot 2  -->
-    <artifactId>baradum-apache-tomcat-9</artifactId>
-    <!--  For spring boot 3  -->
-    <artifactId>baradum-apache-tomcat-10</artifactId>
-    <version>2.0.1</version>
+  <groupId>io.github.robertomike</groupId>
+  <artifactId>baradum-apache-tomcat</artifactId>
+  <!--  For spring boot 2  -->
+  <version>1.0.1</version>
+  <!--  For spring boot 3  -->
+  <version>2.0.1</version>
 </dependency>
 ```
 Gradle
 ```gradle
 dependencies {
     // Spring boot 2
-    implementation 'io.github.robertomike:baradum-apache-tomcat-9:2.0.1'
+    implementation 'io.github.robertomike:baradum-apache-tomcat:1.0.1'
     // Spring boot 3
-    implementation 'io.github.robertomike:baradum-apache-tomcat-10:2.0.1'
+    implementation 'io.github.robertomike:baradum-apache-tomcat:2.0.1'
 }
 ```
 
@@ -272,6 +273,7 @@ There is many class for filter, this is the list:
     - ?date=<=01-01-2022 => date <= new Date('01-01-2022')
     - All supported operators are '<,<=,>,>='
 - EmptyFilter: This verifies if the field is null or empty
+- SearchFilter: This allows is like PartialFilter but allows you to filter by many fields
 - EnumFilter: Transform the received value into enum and will be compared by equals
   - If you need to pass more than one enum and use In operator you concat the values with a comma ','
 - ExactFilter: is the base Filter, only will get the value and make equal to the field
