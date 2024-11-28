@@ -7,14 +7,14 @@ plugins {
 }
 
 group = "io.github.robertomike"
-version = "2.1.1"
+version = "2.1.2"
 
 repositories {
     mavenCentral()
 }
 
 var jdkCompileVersion = 17
-var hefestoVersion = "2.1.2"
+var hefestoVersion = "2.1.3"
 
 dependencies {
     implementation("io.github.robertomike:hefesto-hibernate:$hefestoVersion")
