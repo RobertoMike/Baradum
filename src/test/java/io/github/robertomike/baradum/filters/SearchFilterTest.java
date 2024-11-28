@@ -24,25 +24,10 @@ public class SearchFilterTest {
                 .allowedFilters(SearchFilter.of("name", "lastname", "email"))
                 .get();
 
-        var expected = Arrays.asList(
+        verify(hefesto).where(Arrays.asList(
                 new Where("name", Operator.LIKE, "Ciao%", WhereOperator.OR),
                 new Where("lastname", Operator.LIKE, "Ciao%", WhereOperator.OR),
                 new Where("email", Operator.LIKE, "Ciao%", WhereOperator.OR)
-        );
-
-        ArgumentCaptor<List> argument = ArgumentCaptor.forClass(List.class);
-
-        verify(hefesto).where(argument.capture());
-
-        List<Where> actual = argument.getValue();
-
-        for (var where : actual) {
-            assertTrue(expected.stream().anyMatch(e ->
-                    e.getField().equals(where.getField()) &&
-                            e.getOperator().equals(where.getOperator()) &&
-                            e.getValue().equals(where.getValue()) &&
-                            e.getWhereOperation().equals(where.getWhereOperation())
-            ));
-        }
+        ));
     }
 }

@@ -43,6 +43,10 @@ class Sortable {
 
     fun apply(builder: Hefesto<*>, sorts: List<OrderRequest>) {
         sorts.forEach { sort ->
+            if (sort.field == null) {
+                throw SortableException("The sort list is not valid, one element must have a field null")
+            }
+
             val result = allowedSorts.firstOrNull { allowedSort -> allowedSort.name == sort.field }
 
             if (result == null) {
