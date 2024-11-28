@@ -39,6 +39,16 @@ jobs:
           distribution: 'temurin'
           server-id: ossrh # Value of the distributionManagement/repository/id field of the pom.xml
 
+      - name: Build and publish to Apache Maven Central All
+        if: contains(github.event.release.tag_name, '-all')
+        run: |
+          gradle build
+          export GPG_TTY=$(tty) && gradle -Psigning.keyId=${{ secrets.GPG_SHORT_KEY }} -Psigning.secretKeyRingFile=/home/runner/.gnupg/secring.gpg -Psigning.password=${GPG_KEY_PASSPHRASE} :publishLibraryPublicationToOSSRHRepository :apache-tomcat:publishLibraryPublicationToOSSRHRepository
+        env:
+          GPG_KEY_PASSPHRASE: ${{ secrets.GPG_SECRET_KEY_PASSWORD }}
+          OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+          OSSRH_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
+
       - name: Build and publish to Apache Maven Central Baradum
         if: contains(github.event.release.tag_name, '-baradum')
         run: |
