@@ -61,7 +61,7 @@ Maven
   <!--  For spring boot 2  -->
   <version>1.0.1</version>
   <!--  For spring boot 3  -->
-  <version>2.0.1</version>
+  <version>2.0.3</version>
 </dependency>
 ```
 Gradle
@@ -70,7 +70,7 @@ dependencies {
     // Spring boot 2
     implementation 'io.github.robertomike:baradum-apache-tomcat:1.0.1'
     // Spring boot 3
-    implementation 'io.github.robertomike:baradum-apache-tomcat:2.0.1'
+    implementation 'io.github.robertomike:baradum-apache-tomcat:2.0.3'
 }
 ```
 
