@@ -4,6 +4,7 @@ plugins {
     id("java-library")
     id("maven-publish")
     id("signing")
+    id("org.jreleaser") version "1.15.0"
 }
 
 group = "io.github.robertomike"
@@ -85,9 +86,8 @@ publishing {
     }
     repositories {
         maven {
-
             name = "OSSRH"
-            url = uri("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/")
+            url = uri("https://central.sonatype.com/api/v1/publisher")
             credentials {
                 username = System.getenv("OSSRH_USERNAME")
                 password = System.getenv("OSSRH_PASSWORD")
@@ -121,5 +121,34 @@ java {
     withSourcesJar()
     toolchain {
         languageVersion.set(JavaLanguageVersion.of("$jdkCompileVersion"))
+    }
+}
+
+jreleaser {
+    project {
+        description = "This is an open-source Java library for creation of query with requests and hefesto"
+        authors.add("Roberto Micheletti")
+        license = "MIT"
+        links {
+            homepage = "https://github.com/RobertoMike/Baradum"
+        }
+        inceptionYear = "2024"
+    }
+    
+    signing {
+        active = org.jreleaser.model.Active.ALWAYS
+        armored = true
+    }
+    
+    deploy {
+        maven {
+            mavenCentral {
+                create("sonatype") {
+                    active = org.jreleaser.model.Active.ALWAYS
+                    url = "https://central.sonatype.com/api/v1/publisher"
+                    stagingRepository("build/staging-deploy")
+                }
+            }
+        }
     }
 }
