@@ -76,14 +76,7 @@ publishing {
     repositories {
         maven {
             name = "OSSRH"
-            url = uri("https://central.sonatype.com/api/v1/publisher")
-            credentials {
-                username = System.getenv("OSSRH_USERNAME")
-                password = System.getenv("OSSRH_PASSWORD")
-            }
-            metadataSources {
-                gradleMetadata()
-            }
+            url = uri(layout.buildDirectory.dir("repos/OSSRH"))
         }
     }
 }
@@ -125,7 +118,7 @@ jreleaser {
     }
     
     signing {
-        active = org.jreleaser.model.Active.ALWAYS
+        active = org.jreleaser.model.Active.NEVER
         armored = true
     }
     
@@ -135,7 +128,12 @@ jreleaser {
                 create("sonatype") {
                     active = org.jreleaser.model.Active.ALWAYS
                     url = "https://central.sonatype.com/api/v1/publisher"
-                    stagingRepository("build/staging-deploy")
+                    stagingRepository("build/repos/OSSRH")
+                    applyMavenCentralRules = true
+                    sign = false
+                    checksums = false
+                    sourceJar = false
+                    javadocJar = false
                 }
             }
         }
