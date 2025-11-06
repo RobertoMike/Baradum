@@ -78,3 +78,5 @@ jobs:
           path: |
             build/jreleaser/trace.log
             build/jreleaser/output.properties
+            apache-tomcat/build/jreleaser/trace.log
+            apache-tomcat/build/jreleaser/output.properties

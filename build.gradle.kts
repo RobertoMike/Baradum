@@ -139,7 +139,7 @@ jreleaser {
                 create("sonatype") {
                     active = org.jreleaser.model.Active.ALWAYS
                     url = "https://central.sonatype.com/api/v1/publisher"
-                    stagingRepository("build/repos/OSSRH")
+                    stagingRepository(layout.buildDirectory.dir("repos/OSSRH").get().toString())
                     applyMavenCentralRules = true
                     sign = false
                     checksums = false
