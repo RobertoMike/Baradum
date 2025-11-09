@@ -10,6 +10,8 @@
           <set>
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/apache-tomcat" />
+            <option value="$PROJECT_DIR$/baradum-core" />
+            <option value="$PROJECT_DIR$/baradum-hefesto" />
           </set>
         </option>
       </GradleProjectSettings>

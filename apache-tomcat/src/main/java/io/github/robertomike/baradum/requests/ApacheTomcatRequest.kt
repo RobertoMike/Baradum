@@ -1,5 +1,6 @@
 package io.github.robertomike.baradum.requests
 
+import io.github.robertomike.baradum.core.requests.BasicRequest
 import jakarta.servlet.http.HttpServletRequest
 import java.util.stream.Collectors
 

@@ -1,6 +1,6 @@
 package io.github.robertomike.baradum.requests;
 
-import io.github.robertomike.baradum.exceptions.BaradumException;
+import io.github.robertomike.baradum.core.exceptions.BaradumException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

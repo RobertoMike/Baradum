@@ -6,18 +6,19 @@ plugins {
 }
 
 group = "io.github.robertomike"
-version = "2.0.3"
+version = "3.0.0"
 
 repositories {
+    mavenLocal()
     mavenCentral()
 }
 
 dependencies {
     implementation("org.apache.tomcat.embed:tomcat-embed-core:10.1.11")
-    implementation(project(":"))
+    implementation(project(":baradum-hefesto"))
 
     api("org.apache.tomcat.embed:tomcat-embed-core:10.1.11")
-    api(project(":"))
+    api(project(":baradum-hefesto"))
 
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.8.1")
     testImplementation("org.junit.jupiter:junit-jupiter")
