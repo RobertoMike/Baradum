@@ -16,12 +16,12 @@ import io.github.robertomike.baradum.core.interfaces.QueryBuilder
  * IntervalFilter("price") // Incoming: "100" -> WHERE price = 100
  * ```
  */
-open class IntervalFilter<Q : QueryBuilder<*>> @JvmOverloads constructor(
+open class IntervalFilter @JvmOverloads constructor(
     param: String,
     internalName: String = param
-) : Filter<Any, Q>(param, internalName) {
+) : Filter<Any, QueryBuilder<*>>(param, internalName) {
 
-    override fun filterByParam(query: Q, value: String) {
+    override fun filterByParam(query: QueryBuilder<*>, value: String) {
         // Normalize comma to hyphen for backward compatibility
         val normalizedValue = if (value.contains(",")) value.replace(",", "-") else value
         

@@ -11,19 +11,17 @@ import io.github.robertomike.baradum.core.interfaces.QueryBuilder
  * - "1,2,3" - IN (1,2,3)
  * - "active,pending" - IN ('active','pending')
  * - "USA,UK,CA" - IN ('USA','UK','CA')
- * 
- * @param Q QueryBuilder type
  */
-open class InFilter<Q : QueryBuilder<*>> @JvmOverloads constructor(
+open class InFilter @JvmOverloads constructor(
     param: String,
     internalName: String = param,
     private val delimiter: String = ","
-) : Filter<List<String>, Q>(param, internalName) {
+) : Filter<List<String>, QueryBuilder<*>>(param, internalName) {
 
     /**
      * Split the value by delimiter and apply IN operator.
      */
-    override fun filterByParam(query: Q, value: String) {
+    override fun filterByParam(query: QueryBuilder<*>, value: String) {
         val values = transform(value)
         
         if (values.isEmpty()) {

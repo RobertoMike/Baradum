@@ -11,36 +11,36 @@ public class User implements BaseModel {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    public Long id;
     
     @Column(name = "username", nullable = false, unique = true)
-    private String username;
+    public String username;
     
     @Column(name = "email", nullable = false)
-    private String email;
+    public String email;
     
     @Column(name = "full_name")
-    private String fullName;
+    public String fullName;
     
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
-    private Status status;
+    public Status status;
     
     @Column(name = "age")
-    private Integer age;
+    public Integer age;
     
     @Column(name = "country")
-    private String country;
+    public String country;
     
     @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "created_at")
-    private Date createdAt;
+    public Date createdAt;
     
     @Column(name = "salary")
-    private Double salary;
+    public Double salary;
     
     @Column(name = "is_active")
-    private Boolean isActive;
+    public Boolean isActive;
 
     // BaseModel implementation
     @Override

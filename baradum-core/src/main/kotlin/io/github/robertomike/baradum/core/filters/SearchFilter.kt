@@ -18,10 +18,10 @@ import io.github.robertomike.baradum.core.interfaces.QueryBuilder
  * SearchFilter.of("username", "email") // defaults param to "search"
  * ```
  */
-open class SearchFilter<Q : QueryBuilder<*>> @JvmOverloads constructor(
+open class SearchFilter @JvmOverloads constructor(
     param: String,
     vararg fields: String
-) : Filter<Any, Q>(param, "") {
+) : Filter<Any, QueryBuilder<*>>(param, "") {
 
     private var internalNames: List<String> = fields.toList()
     private var strategy: SearchLikeStrategy = SearchLikeStrategy.COMPLETE
@@ -32,22 +32,22 @@ open class SearchFilter<Q : QueryBuilder<*>> @JvmOverloads constructor(
          * Convenient for Java usage.
          */
         @JvmStatic
-        fun <Q : QueryBuilder<*>> of(vararg fields: String): SearchFilter<Q> {
+        fun  of(vararg fields: String): SearchFilter {
             return SearchFilter("search", *fields)
         }
     }
 
-    open fun setInternalNames(names: List<String>): SearchFilter<Q> {
+    open fun setInternalNames(names: List<String>): SearchFilter {
         this.internalNames = names
         return this
     }
 
-    open fun setStrategy(strategy: SearchLikeStrategy): SearchFilter<Q> {
+    open fun setStrategy(strategy: SearchLikeStrategy): SearchFilter {
         this.strategy = strategy
         return this
     }
 
-    override fun filterByParam(query: Q, value: String) {
+    override fun filterByParam(query: QueryBuilder<*>, value: String) {
         if (internalNames.isEmpty()) return
 
         val likeValue = strategy.apply(value)

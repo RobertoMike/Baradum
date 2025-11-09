@@ -18,16 +18,16 @@ import io.github.robertomike.baradum.core.interfaces.QueryBuilder
  * 
  * @param Q QueryBuilder type
  */
-open class ComparisonFilter<Q : QueryBuilder<*>> @JvmOverloads constructor(
+open class ComparisonFilter @JvmOverloads constructor(
     param: String,
     internalName: String = param
-) : Filter<String, Q>(param, internalName) {
+) : Filter<String, QueryBuilder<*>>(param, internalName) {
 
     /**
      * Parse the value and apply the appropriate comparison operator.
      * Supports prefixes: >, >=, <, <=, !=
      */
-    override fun filterByParam(query: Q, value: String) {
+    override fun filterByParam(query: QueryBuilder<*>, value: String) {
         val (operator, cleanValue) = parseOperatorAndValue(value)
         
         if (cleanValue.isEmpty()) {

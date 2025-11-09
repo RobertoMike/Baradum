@@ -19,9 +19,9 @@ open class EnumFilter<E : Enum<E>, Q : QueryBuilder<*>> @JvmOverloads constructo
     param: String,
     internalName: String = param,
     private val enumClass: Class<E>
-) : Filter<E, Q>(param, internalName) {
+) : Filter<E, QueryBuilder<*>>(param, internalName) {
 
-    override fun filterByParam(query: Q, value: String) {
+    override fun filterByParam(query: QueryBuilder<*>, value: String) {
         if (value.contains(",")) {
             // Multiple values - use IN operator
             val values = value.split(",")

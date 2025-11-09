@@ -13,15 +13,15 @@ import io.github.robertomike.baradum.core.interfaces.QueryBuilder
  * 
  * @param Q QueryBuilder type
  */
-open class IsNullFilter<Q : QueryBuilder<*>> @JvmOverloads constructor(
+open class IsNullFilter @JvmOverloads constructor(
     param: String,
     internalName: String = param
-) : Filter<Boolean, Q>(param, internalName) {
+) : Filter<Boolean, QueryBuilder<*>>(param, internalName) {
 
     /**
      * Apply NULL or NOT NULL condition based on the value.
      */
-    override fun filterByParam(query: Q, value: String) {
+    override fun filterByParam(query: QueryBuilder<*>, value: String) {
         val isNull = transform(value)
         
         if (isNull) {

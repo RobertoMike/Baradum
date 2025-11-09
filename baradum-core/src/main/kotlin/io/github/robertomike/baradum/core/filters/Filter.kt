@@ -4,11 +4,29 @@ import io.github.robertomike.baradum.core.enums.BaradumOperator
 import io.github.robertomike.baradum.core.interfaces.QueryBuilder
 import io.github.robertomike.baradum.core.requests.BasicRequest
 import lombok.Getter
+import kotlin.reflect.KProperty1
 
 @Getter
 abstract class Filter<T : Any, Q : QueryBuilder<*>>(val param: String, val internalName: String) {
     private var defaultValue: String? = null
     private var ignored: MutableList<String> = ArrayList()
+
+    /**
+     * Alternative constructor using Kotlin property reference for type-safe field access.
+     * 
+     * Usage:
+     * ```kotlin
+     * ExactFilter(User::name)  // Uses 'name' as both param and internalName
+     * PartialFilter(User::email, "searchEmail")  // Uses 'email' as internalName, 'searchEmail' as param
+     * ```
+     * 
+     * @param property Kotlin property reference (e.g., User::name)
+     * @param param Optional custom parameter name (defaults to property name)
+     */
+    constructor(property: KProperty1<*, *>, param: String? = null) : this(
+        param ?: property.name,
+        property.name
+    )
 
     fun addIgnore(vararg ignored: String): Filter<T, Q> {
         this.ignored.addAll(listOf(*ignored))

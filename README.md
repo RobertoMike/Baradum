@@ -1,41 +1,40 @@
 # Welcome to Baradum
 
-This library is for simplify work when we need to filter or sort the models in a simple way using HefestoSql.
-This will allow you to filter or sort your models using Parameters or body in a simple way
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.robertomike/baradum.svg)](https://search.maven.org/artifact/io.github.robertomike/baradum)
+[![License](https://img.shields.io/github/license/RobertoMike/Baradum)](LICENSE.txt)
 
-## Links
-- [Example of use](#example-of-use)
-- [How to install](#how-to-install)
-- [Difference](#difference)
-- [Configuration of Baradum](#configuration)
-- [Allowed filters for parameters](#allowed-filters-for-parameters)
-- [How to sort using parameters](#how-to-sort-using-parameters)
-- [How to filter and sort by body](#how-to-filter-and-sort-using-body)
-- [Warning](#warning-)
+Baradum is a powerful library that simplifies filtering and sorting in your Java/Kotlin applications using HefestoSql. It allows you to dynamically filter and sort database queries using URL parameters or request body, eliminating the need for complex conditional logic.
 
-##  Example of use
+## 🚀 What's New in Latest Version
 
-If repository return null or optional empty throw NotFoundException.
+- **🎯 Type-Safe Kotlin API**: Use property references (`User::name`) for compile-time safety
+- **📅 Enhanced DateFilter**: Support for LocalDate, LocalDateTime, java.util.Date, SQL dates with custom patterns
+- **🔢 New Comparison Filters**: GreaterFilter and LessFilter with configurable equality
+- **🏗️ Builder Patterns**: Fluent APIs for complex filter configurations
+- **📚 Comprehensive Documentation**: Complete API reference and migration guides
 
-```java
-package io.github.robertomike.baradum.Baradum;
+## 📋 Table of Contents
 
-public class controller {
-    public List<User> nameMethod() {
-        return Baradum.make(User.class)
-                // this will allow to filter using a param named id
-                .allowedFilters("id")
-                .get();
-    }
-}
-```
+- [Installation](#-installation)
+- [Quick Start](#-quick-start)
+- [Filter Types](#-filter-types)
+- [Kotlin Property References](#-kotlin-property-references-type-safe-api)
+- [Date Filtering](#-date-filtering)
+- [Sorting](#-sorting)
+- [Body Filtering](#-body-based-filtering)
+- [Configuration](#-configuration)
+- [Documentation](#-documentation)
+- [Examples](#-examples)
 
-## How to install
+## 📦 Installation
 
-If you only need the baradum library you can use this, 
-but you will need to create a custom request class, see: [How to create custom request class](#create-custom-request-class)
+### Core Library
 
-Maven
+<table>
+<tr><th>Maven</th><th>Gradle</th></tr>
+<tr>
+<td>
+
 ```xml
 <dependency>
     <groupId>io.github.robertomike</groupId>
@@ -43,318 +42,262 @@ Maven
     <version>2.1.1</version>
 </dependency>
 ```
-Gradle
+
+</td>
+<td>
+
 ```gradle
 dependencies {
     implementation 'io.github.robertomike:baradum:2.1.1'
 }
 ```
 
-If you want use it on Spring boot 2, 3 or with apache tomcat you need to use
-
-Maven
-```xml
-
-<dependency>
-  <groupId>io.github.robertomike</groupId>
-  <artifactId>baradum-apache-tomcat</artifactId>
-  <!--  For spring boot 2  -->
-  <version>1.0.1</version>
-  <!--  For spring boot 3  -->
-  <version>2.0.3</version>
-</dependency>
-```
-Gradle
-```gradle
-dependencies {
-    // Spring boot 2
-    implementation 'io.github.robertomike:baradum-apache-tomcat:1.0.1'
-    // Spring boot 3
-    implementation 'io.github.robertomike:baradum-apache-tomcat:2.0.3'
-}
-```
-
-##  Difference
-
-<table>
-<tr>
-    <th>Normal</th>
-    <th>Baradum</th>
-</tr>
-<tr>
-<td>
-
-```java
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-
-@AllArgsConstructor
-public class ExampleController {
-    private ExampleRepository repository;
-
-    @GetMapping("/examples")
-    public Example index(
-            @RequestParam(required = false) Long categoryId,
-            @RequestParam(required = false) Long minAge,
-            @RequestParam(required = false) Long maxAge
-        ) {
-        if (categoryId != null && minAge != null && maxAge != null) {
-            return repository.findByCategoryIdAndAgeGreaterThanEqualAndAgeLessThanEqual(status, minAge, maxAge);
-        }
-        if (categoryId != null && minAge != null) {
-            return repository.findByCategoryIdAndAgeGreaterThanEqual(status, minAge);
-        }
-        if (minAge != null && maxAge != null) {
-            return repository.findByAgeGreaterThanEqualAndAgeLessThanEqual(minAge, maxAge);
-        }
-        if (categoryId != null) {
-            return repository.findBycategoryId(status);
-        }
-        if (minAge != null) {
-            return repository.findByAgeGreaterThanEqual(minAge);
-        }
-        if (maxAge != null) {
-            return repository.findByAgeLessThanEqual(maxAge);
-        }
-        
-        return repository.findAll();
-    }
-}
-```
-</td>
-<td>
-
-```java
-import io.github.robertomike.baradum.Baradum;
-import org.springframework.web.bind.annotation.GetMapping;
-
-public class ExampleController {
-    @GetMapping("/examples")
-    public Example index() {
-        return Baradum.make(User.class)
-                // This will create a ExactFilter, and with that if this find the param will be filtered by and equals
-                // example "?categoryId=2" this will be filtered by categoryId = 2
-                .allowedFilters("categoryId")
-                .allowedFilters(
-                        // The conditions will be applied the conditions based on the param age
-                        // example "?age=18" this will be filtered by age >= 18
-                        // example "?age=18,65" this will be filtered by age >= 18 and age <= 65
-                        // example "?age=,65" this will be filtered by age <= 65
-                        new IntervalFilter("age")
-                )
-                .page();
-    }
-}
-```
-</td>
-</tr>
-<tr>
-<td>
-
-```java
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-
-@AllArgsConstructor
-public class ExampleController {
-    private ExampleRepository repository;
-
-    @GetMapping("/examples")
-    public Example index(
-            @RequestParam(required = false) String name,
-            @RequestParam(required = false) Enum status
-        ) {
-        if (status != null && name != null) {
-            return repository.findByStatusAndName(status, name);
-        }
-        if (status != null) {
-            return repository.findByStatus(status);
-        }
-        if (name != null) {
-            return repository.findByName(name);
-        }
-        
-        return repository.findAll();
-    }
-}
-```
-</td>
-<td>
-
-```java
-import io.github.robertomike.baradum.Baradum;
-import org.springframework.web.bind.annotation.GetMapping;
-
-public class ExampleController {
-    @GetMapping("/examples")
-    public Example index() {
-        return Baradum.make(User.class)
-                .allowedFilters(
-                        // This allows you to filter using like and add automatically the % at the end of the value
-                        // Example "?name=ale" will be filtered as "name like 'ale%'"
-                        new PartialFilter("name"),
-                        // This receives the value and transform it to the enum you need
-                        new EnumFilter<>("status", Enum.class)
-                )
-                .get();
-    }
-}
-```
 </td>
 </tr>
 </table>
 
-##  Configuration
+### Spring Boot Integration
 
-If you are using Spring boot 2 or 3 you don't need to make nothing.
+<table>
+<tr><th>Maven</th><th>Gradle</th></tr>
+<tr>
+<td>
 
-The configuration is simple, if you are using a framework that use the library org.apache.tomcat.embed:tomcat-embed-core 
-for the request, you only need to use the class based on your version. Supported versions are 9 and 10 of apache tomcat
+```xml
+<!-- Spring Boot 2 -->
+<dependency>
+  <groupId>io.github.robertomike</groupId>
+  <artifactId>baradum-apache-tomcat</artifactId>
+  <version>1.0.1</version>
+</dependency>
 
-```java
+<!-- Spring Boot 3 -->
+<dependency>
+  <groupId>io.github.robertomike</groupId>
+  <artifactId>baradum-apache-tomcat</artifactId>
+  <version>2.0.3</version>
+</dependency>
+```
 
-public class BaradumConfig {
-    private BaradumConfig(HttpServletRequest request) {
-        // if you are using apache tomcat 9
-        new AutoConfigurationSpring2(request);
-        // if you are using apache tomcat 10
-        new AutoConfigurationSpring3(request);
-    }
+</td>
+<td>
+
+```gradle
+dependencies {
+    // Spring Boot 2
+    implementation 'io.github.robertomike:baradum-apache-tomcat:1.0.1'
+    
+    // Spring Boot 3
+    implementation 'io.github.robertomike:baradum-apache-tomcat:2.0.3'
 }
 ```
 
-### Create custom request class
-If you are not using org.apache.tomcat.embed:tomcat-embed-core or the library don't support some version
-you can create you own class for the request
+</td>
+</tr>
+</table>
 
-This is an example of the ApacheTomcatRequest and what do you need to do
+## 🎯 Quick Start
+
+### The Problem
+
+**Without Baradum (Traditional Approach):**
+
 ```java
-
-public class ApacheTomcatRequest extends BasicRequest<HttpServletRequest> {
-    public ApacheTomcatRequest(HttpServletRequest request) {
-        super(request);
+@GetMapping("/users")
+public List<User> getUsers(
+    @RequestParam(required = false) Long categoryId,
+    @RequestParam(required = false) Integer minAge,
+    @RequestParam(required = false) Integer maxAge
+) {
+    if (categoryId != null && minAge != null && maxAge != null) {
+        return repository.findByCategoryIdAndAgeGreaterThanEqualAndAgeLessThanEqual(
+            categoryId, minAge, maxAge
+        );
     }
-
-    @Override
-    public String findParamByName(String name) {
-        return getRequest().getParameter(name);
+    if (categoryId != null && minAge != null) {
+        return repository.findByCategoryIdAndAgeGreaterThanEqual(categoryId, minAge);
     }
-
-    @Override
-    public String getMethod() {
-        return getRequest().getMethod();
+    if (minAge != null && maxAge != null) {
+        return repository.findByAgeGreaterThanEqualAndAgeLessThanEqual(minAge, maxAge);
     }
-
-    @Override
-    public BufferedReader getReader() throws IOException {
-        return getRequest().getReader();
-    }
+    // ... 5 more conditional branches
+    return repository.findAll();
 }
 ```
 
-After this you need to set the class that you create and configure Baradum
+### The Solution
+
+**With Baradum:**
 
 ```java
-
-public class BaradumConfig {
-    private BaradumConfig(HttpServletRequest request) {
-        Baradum.setRequest(new ApacheTomcatRequest(request));
-    }
+@GetMapping("/users")
+public List<User> getUsers() {
+    return Baradum.make(User.class)
+        .allowedFilters("categoryId")
+        .allowedFilters(new IntervalFilter("age"))
+        .page();
 }
 ```
 
-##  Allowed filters for Parameters
+**Kotlin with Type Safety:**
 
-There is many class for filter, this is the list:
-
-- DateFilter: This allows you to filter by date and select the operator
-  - Examples:
-    - ?date=01-01-2022 => date = new Date('01-01-2022')
-    - ?date=<=01-01-2022 => date <= new Date('01-01-2022')
-    - All supported operators are '<,<=,>,>='
-- EmptyFilter: This verifies if the field is null or empty
-- SearchFilter: This allows is like PartialFilter but allows you to filter by many fields
-- EnumFilter: Transform the received value into enum and will be compared by equals
-  - If you need to pass more than one enum and use In operator you concat the values with a comma ','
-- ExactFilter: is the base Filter, only will get the value and make equal to the field
-- IntervalDateFilter: This allows you to filter by range of dates
-  - Examples:
-    - ?date=01-01-2022 => date >= 01-01-2022
-    - ?date=01-01-2022,02-01-2022 => 'date >= 01-01-2022 and date <= 02-01-2022'
-    - ?date=,01-01-2022 => 'date <= 01-01-2022'
-- NotEmptyFilter: This is the opposite of EmptyFilter
-- PartialFilter: This allows you to search inside text using Like as operator and putting % at the final value
-  - ?name=mar => name like 'mar%'
-- SetFilter: This filter will allow you to filter using FIND_IN_SET or NO_FIND_IN_SET function using an Enum
-  - If you want to pass more than one parameter you can use , or | and will be a sub query. Example:
-    - (find_in_set() and find_in_set() and find_in_set())
-  - If you are using | then will be applied the Where operator OR
-  - If you are using , then will be applied the Where Operator AND
-  - If you want to use the NO_FIND_IN_SET when create the filter need to pass in the constructor false inside not variable
-- CustomFilter: this filter allows you to pass a lambda expression where do you receive Hefesto and the value
-
-If you need something more specific you can use the CustomFilter or create your own filter extending the class Filter.
-
-For all the filters are allowed to specify the alias for the field.
-Example: 
-
-```java
-import io.github.robertomike.baradum.Baradum;
-import org.springframework.web.bind.annotation.GetMapping;
-
-public class ExampleController {
-    @GetMapping("/examples")
-    public Example index() {
-        return Baradum.make(User.class)
-                .allowedFilters(new ExactFilter("alias", "name"))
-                .get();
-    }
+```kotlin
+@GetMapping("/users")
+fun getUsers(): List<User> {
+    return Baradum.make(User::class.java)
+        .allowedFilters(
+            ExactFilter(User::categoryId),
+            IntervalFilter(User::age)
+        )
+        .page()
 }
 ```
 
-Url parameter: ?alias=pap
+**URL Usage:**
+- `?categoryId=2` → Filters by `categoryId = 2`
+- `?age=18-65` → Filters by `age >= 18 AND age <= 65`
+- `?categoryId=2&age=18-65` → Both filters applied
 
-##  How to sort using Parameters
+## 📚 Filter Types
 
-If you need to allow the sort using parameters you can use Baradum
+### Core Filters
 
-```java
-import io.github.robertomike.baradum.Baradum;
-import org.springframework.web.bind.annotation.GetMapping;
+| Filter | Purpose | Example URL | SQL Result |
+|--------|---------|-------------|------------|
+| **ExactFilter** | Exact matching | `?status=ACTIVE` | `status = 'ACTIVE'` |
+| **PartialFilter** | LIKE search | `?name=john` | `name LIKE 'john%'` |
+| **SearchFilter** | Multi-field OR | `?search=john` | `name LIKE '%john%' OR email LIKE '%john%'` |
+| **EnumFilter** | Enum values | `?status=ACTIVE,PENDING` | `status IN ('ACTIVE', 'PENDING')` |
+| **IntervalFilter** | Numeric ranges | `?age=18-65` | `age >= 18 AND age <= 65` |
+| **InFilter** | Multiple values | `?country=US,CA,MX` | `country IN ('US', 'CA', 'MX')` |
+| **IsNullFilter** | NULL checks | `?deletedAt=null` | `deletedAt IS NULL` |
 
-public class ExampleController {
-    @GetMapping("/examples")
-    public Example index() {
-        return Baradum.make(User.class)
-                .allowedSort("name")
-                .allowedSort(new OrderBy("alias", "field"))
-                .get();
-    }
+### Comparison Filters
+
+| Filter | Purpose | Example URL | SQL Result |
+|--------|---------|-------------|------------|
+| **ComparisonFilter** | Flexible operators | `?price=>100` | `price > 100` |
+| **GreaterFilter** | Greater than | `?age=18` | `age > 18` or `age >= 18` |
+| **LessFilter** | Less than | `?age=65` | `age < 65` or `age <= 65` |
+
+### Date & Time Filters
+
+| Filter | Purpose | Example URL | SQL Result |
+|--------|---------|-------------|------------|
+| **DateFilter** | Date filtering | `?date=2024-01-01\|2024-12-31` | `date BETWEEN '2024-01-01' AND '2024-12-31'` |
+| | Comparison | `?date=>2024-01-01` | `date > '2024-01-01'` |
+
+### Advanced
+
+| Filter | Purpose | Example | Description |
+|--------|---------|---------|-------------|
+| **CustomFilter** | Lambda logic | See docs | Custom filtering logic |
+
+## 🎭 Kotlin Property References (Type-Safe API)
+
+Use Kotlin property references for compile-time safety:
+
+```kotlin
+data class User(
+    val id: Long,
+    val name: String,
+    val email: String,
+    val age: Int,
+    val status: Status,
+    val createdAt: LocalDateTime
+)
+
+@GetMapping("/users")
+fun getUsers(): List<User> {
+    return Baradum.make(User::class.java)
+        .allowedFilters(
+            ExactFilter(User::id),                              // ?id=123
+            PartialFilter(User::name, "search"),                // ?search=john
+            EnumFilter(User::status, Status::class.java),       // ?status=ACTIVE
+            IntervalFilter(User::age),                          // ?age=18-65
+            DateFilter.forLocalDateTime(User::createdAt),       // ?createdAt=>2024-01-01
+            GreaterFilter(User::age, "minAge", orEqual = true), // ?minAge=18
+            LessFilter(User::age, "maxAge", orEqual = true)     // ?maxAge=65
+        )
+        .allowedSort(User::name, User::createdAt)
+        .page()
 }
 ```
 
-In this way you can sort by one or more fields, using comma.
-And if you want to define the sort direction you put in front of the field a - for DESC and nothing for ASC
+**Benefits:**
+- ✅ Compile-time field validation
+- ✅ Refactoring support
+- ✅ IDE auto-completion
+- ✅ Type safety
 
-Examples:
-- ?sort=name
-- ?sort=name,alias
-- ?sort=-name,alias
+## 📅 Date Filtering
 
-##  How to filter and sort using Body
+### Multiple Date Types Supported
 
-The difference between the parameters and body is, 
-that Filters for the body will only be use for cast and know if is allowed to use that field
+```java
+// LocalDate (default)
+DateFilter("createdAt")
 
-### Supported filters are:
+// LocalDateTime with custom pattern
+DateFilter.forLocalDateTime("updatedAt", "dd/MM/yyyy HH:mm:ss")
 
-- ExactFilter
-- EnumFilter
-- DateFilter
+// java.util.Date
+DateFilter.forUtilDate("birthDate", "MM-dd-yyyy")
 
-### Json example of body
+// SQL Date
+DateFilter.forSqlDate("startDate")
 
-This is a json example of how you can filter and sort your results.
+// SQL Timestamp
+DateFilter.forSqlTimestamp("eventTime")
+
+// Builder pattern
+DateFilter.builder("eventDate")
+    .useLocalDate()
+    .withPattern("yyyy/MM/dd")
+    .build()
+```
+
+### Date Filtering Examples
+
+| URL Parameter | SQL Result |
+|---------------|------------|
+| `?date=2024-01-01` | `date = '2024-01-01'` |
+| `?date=2024-01-01\|2024-12-31` | `date >= '2024-01-01' AND date <= '2024-12-31'` |
+| `?date=>2024-01-01` | `date > '2024-01-01'` |
+| `?date=>=2024-01-01` | `date >= '2024-01-01'` |
+| `?date=<2024-12-31` | `date < '2024-12-31'` |
+| `?date=<=2024-12-31` | `date <= '2024-12-31'` |
+
+## 📊 Sorting
+
+### Simple Sorting
+
+```java
+return Baradum.make(User.class)
+    .allowedSort("name", "createdAt")
+    .get();
+```
+
+**URL Examples:**
+- `?sort=name` → `ORDER BY name ASC`
+- `?sort=-name` → `ORDER BY name DESC`
+- `?sort=name,-createdAt` → `ORDER BY name ASC, createdAt DESC`
+
+### Custom Field Names
+
+```java
+.allowedSort(new OrderBy("alias", "actual_field_name"))
+```
+
+### Kotlin Property References
+
+```kotlin
+.allowedSort(User::name, User::createdAt, User::email)
+```
+
+## 📝 Body-Based Filtering
+
+For complex filtering scenarios, use JSON body:
 
 ```json
 {
@@ -378,11 +321,6 @@ This is a json example of how you can filter and sort your results.
         {
             "subFilters": [
                 {
-                    "field": "id",
-                    "value": "1",
-                    "operator": "EQUAL"
-                },
-                {
                     "field": "status",
                     "value": "ACTIVE,INACTIVE",
                     "operator": "IN",
@@ -403,11 +341,186 @@ This is a json example of how you can filter and sort your results.
 }
 ```
 
-How you can see the body filter is more advance that the parameters filter.
-The body will be read from the class HttpServletRequest and transformed in BodyRequest
+## ⚙️ Configuration
 
-## Warning ![Warning](./warning.svg)
+### Spring Boot (Auto-Configuration)
 
-This library actually doesn't support swagger for automatically definitions.
+**No configuration needed!** Spring Boot 2 & 3 are auto-configured.
 
-[![coffee](./buy-me-coffee.png)](https://www.buymeacoffee.com/robertomike)
+### Manual Configuration
+
+```java
+public class BaradumConfig {
+    @Bean
+    public void configureBaradum(HttpServletRequest request) {
+        // For Apache Tomcat 9 (Spring Boot 2)
+        new AutoConfigurationSpring2(request);
+        
+        // For Apache Tomcat 10 (Spring Boot 3)
+        new AutoConfigurationSpring3(request);
+    }
+}
+```
+
+### Custom Request Implementation
+
+```java
+public class MyCustomRequest extends BasicRequest<HttpServletRequest> {
+    public MyCustomRequest(HttpServletRequest request) {
+        super(request);
+    }
+
+    @Override
+    public String findParamByName(String name) {
+        return getRequest().getParameter(name);
+    }
+
+    @Override
+    public String getMethod() {
+        return getRequest().getMethod();
+    }
+
+    @Override
+    public BufferedReader getReader() throws IOException {
+        return getRequest().getReader();
+    }
+}
+
+// Configure Baradum
+Baradum.setRequest(new MyCustomRequest(request));
+```
+
+## 📖 Documentation
+
+- **[Complete Documentation](DOCUMENTATION.md)** - Full guide with examples
+- **[Filter API Reference](FILTER_API_REFERENCE.md)** - Detailed filter documentation
+- **[Migration Guide](MIGRATION_GUIDE.md)** - Upgrade from previous versions
+- **[Test Suite Summary](TEST_SUITE_SUMMARY.md)** - Test coverage details
+
+## 💡 Examples
+
+### E-commerce Product Filtering
+
+```kotlin
+@GetMapping("/products")
+fun getProducts(): Page<Product> {
+    return Baradum.make(Product::class.java)
+        .allowedFilters(
+            ExactFilter(Product::category),
+            PartialFilter(Product::name, "search"),
+            GreaterFilter(Product::price, "minPrice", orEqual = true),
+            LessFilter(Product::price, "maxPrice", orEqual = true),
+            EnumFilter(Product::status, ProductStatus::class.java),
+            InFilter(Product::brand, "brands")
+        )
+        .allowedSort(Product::price, Product::name)
+        .page()
+}
+```
+
+**Usage:**
+```
+GET /products?category=electronics&search=laptop&minPrice=500&maxPrice=2000
+    &brands=Apple,Dell,HP&status=IN_STOCK&sort=price
+```
+
+### User Management
+
+```java
+@GetMapping("/users")
+public List<User> getUsers() {
+    return Baradum.make(User.class)
+        .allowedFilters(
+            PartialFilter("username"),
+            SearchFilter.of("search", "username", "email", "fullName"),
+            EnumFilter("role", Role.class),
+            DateFilter.forLocalDateTime("createdAt"),
+            IntervalFilter("age"),
+            IsNullFilter("deletedAt")
+        )
+        .allowedSort("username", "createdAt")
+        .get();
+}
+```
+
+**Usage:**
+```
+GET /users?search=john&role=ADMIN&age=25-50&deletedAt=null&sort=-createdAt
+```
+
+### Event Calendar
+
+```java
+@GetMapping("/events")
+public List<Event> getEvents() {
+    return Baradum.make(Event.class)
+        .allowedFilters(
+            ExactFilter("organizerId"),
+            PartialFilter("title"),
+            DateFilter.builder("eventDate")
+                .useLocalDateTime()
+                .withPattern("yyyy-MM-dd HH:mm")
+                .build(),
+            GreaterFilter("attendeeCount", "minAttendees", true),
+            InFilter("location")
+        )
+        .allowedSort("eventDate", "title")
+        .page();
+}
+```
+
+**Usage:**
+```
+GET /events?title=concert&eventDate=>2024-01-01&minAttendees=100
+    &location=NY,LA,CHI&sort=eventDate
+```
+
+## 🔧 Advanced Features
+
+### Default Values
+
+```java
+ExactFilter("status").setDefaultValue("ACTIVE")
+```
+
+### Ignoring Values
+
+```java
+IntervalFilter("age").addIgnore("0", "null", "")
+```
+
+### Custom Filters
+
+```java
+new CustomFilter<>("status", (query, value) -> {
+    if (value.equals("premium")) {
+        query.where("subscription_level", BaradumOperator.GREATER, 5);
+    } else {
+        query.where("status", BaradumOperator.EQUAL, value);
+    }
+})
+```
+
+## ⚠️ Important Notes
+
+- **Swagger/OpenAPI**: Manual documentation required (no auto-generation support)
+- **Spring Boot**: Versions 2 & 3 supported
+- **Apache Tomcat**: Versions 9 & 10 supported
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE.txt](LICENSE.txt) file for details.
+
+## ☕ Support
+
+If you find this library helpful, consider buying me a coffee!
+
+[![Buy Me A Coffee](./buy-me-coffee.png)](https://www.buymeacoffee.com/robertomike)
+
+---
+
+**Made with ❤️ by Roberto Mike**
