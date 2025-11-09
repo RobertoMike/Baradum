@@ -1,8 +1,8 @@
 package io.github.robertomike.baradum.hefesto.integration;
 
 import io.github.robertomike.baradum.core.Baradum;
+import io.github.robertomike.baradum.core.filters.SearchFilter;
 import io.github.robertomike.baradum.hefesto.config.DatabaseExtension;
-import io.github.robertomike.baradum.hefesto.filters.SearchFilter;
 import io.github.robertomike.baradum.hefesto.models.User;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
@@ -155,7 +155,7 @@ class SearchFilterDatabaseTest {
         List<User> users = Baradum.make(User.class)
                 .allowedFilters(
                         SearchFilter.of("email"),
-                        new io.github.robertomike.baradum.hefesto.filters.ExactFilter("country"))
+                        new io.github.robertomike.baradum.core.filters.ExactFilter("country"))
                 .withParams(params)
                 .get();
         

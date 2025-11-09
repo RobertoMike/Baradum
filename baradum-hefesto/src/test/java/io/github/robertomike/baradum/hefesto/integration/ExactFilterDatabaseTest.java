@@ -1,11 +1,11 @@
 package io.github.robertomike.baradum.hefesto.integration;
 
 import io.github.robertomike.baradum.core.Baradum;
+import io.github.robertomike.baradum.core.filters.ExactFilter;
 import io.github.robertomike.baradum.hefesto.config.DatabaseExtension;
-import io.github.robertomike.baradum.hefesto.filters.EnumFilter;
-import io.github.robertomike.baradum.hefesto.filters.ExactFilter;
-import io.github.robertomike.baradum.hefesto.models.Status;
+import io.github.robertomike.baradum.core.filters.EnumFilter;
 import io.github.robertomike.baradum.hefesto.models.User;
+import io.github.robertomike.baradum.hefesto.models.Status;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

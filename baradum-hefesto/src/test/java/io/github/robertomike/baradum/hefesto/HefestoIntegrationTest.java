@@ -1,6 +1,9 @@
 package io.github.robertomike.baradum.hefesto;
 
-import io.github.robertomike.baradum.hefesto.filters.*;
+import io.github.robertomike.baradum.core.filters.*;
+import io.github.robertomike.baradum.core.filters.EnumFilter;
+import io.github.robertomike.baradum.core.filters.DateFilter;
+import io.github.robertomike.baradum.core.filters.IntervalFilter;
 import io.github.robertomike.baradum.hefesto.models.Status;
 import io.github.robertomike.baradum.hefesto.models.User;
 import org.junit.jupiter.api.Test;

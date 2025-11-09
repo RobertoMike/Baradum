@@ -2,7 +2,7 @@ package io.github.robertomike.baradum.hefesto.integration;
 
 import io.github.robertomike.baradum.core.Baradum;
 import io.github.robertomike.baradum.hefesto.config.DatabaseExtension;
-import io.github.robertomike.baradum.hefesto.filters.IntervalFilter;
+import io.github.robertomike.baradum.core.filters.IntervalFilter;
 import io.github.robertomike.baradum.hefesto.models.User;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;

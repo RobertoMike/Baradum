@@ -2,7 +2,7 @@ package io.github.robertomike.baradum.hefesto.integration;
 
 import io.github.robertomike.baradum.core.Baradum;
 import io.github.robertomike.baradum.hefesto.config.DatabaseExtension;
-import io.github.robertomike.baradum.hefesto.filters.EnumFilter;
+import io.github.robertomike.baradum.core.filters.EnumFilter;
 import io.github.robertomike.baradum.hefesto.models.Status;
 import io.github.robertomike.baradum.hefesto.models.User;
 import jakarta.persistence.EntityManager;
@@ -110,7 +110,7 @@ class EnumFilterDatabaseTest {
         List<User> users = Baradum.make(User.class)
                 .allowedFilters(
                         new EnumFilter("status", Status.class),
-                        new io.github.robertomike.baradum.hefesto.filters.ExactFilter("country"))
+                        new io.github.robertomike.baradum.core.filters.ExactFilter("country"))
                 .withParams(params)
                 .get();
         
@@ -131,7 +131,7 @@ class EnumFilterDatabaseTest {
         List<User> users = Baradum.make(User.class)
                 .allowedFilters(
                         new EnumFilter("status", Status.class),
-                        new io.github.robertomike.baradum.hefesto.filters.IntervalFilter("age"))
+                        new io.github.robertomike.baradum.core.filters.IntervalFilter("age"))
                 .withParams(params)
                 .get();
         

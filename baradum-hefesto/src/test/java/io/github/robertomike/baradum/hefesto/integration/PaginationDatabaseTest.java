@@ -82,7 +82,7 @@ class PaginationDatabaseTest {
         params.put("limit", "3");
         
         var page = Baradum.make(User.class)
-                .allowedFilters(new io.github.robertomike.baradum.hefesto.filters.ExactFilter("country"))
+                .allowedFilters(new io.github.robertomike.baradum.core.filters.ExactFilter("country"))
                 .withParams(params)
                 .page(15);  // Default page size
         
@@ -100,7 +100,7 @@ class PaginationDatabaseTest {
         params.put("limit", "3");
         
         var page = Baradum.make(User.class)
-                .allowedFilters(new io.github.robertomike.baradum.hefesto.filters.ExactFilter("country"))
+                .allowedFilters(new io.github.robertomike.baradum.core.filters.ExactFilter("country"))
                 .allowedSort("salary")
                 .withParams(params)
                 .page(15);  // Default page size
@@ -190,10 +190,10 @@ class PaginationDatabaseTest {
         
         var page = Baradum.make(User.class)
                 .allowedFilters(
-                        new io.github.robertomike.baradum.hefesto.filters.EnumFilter("status", 
+                        new io.github.robertomike.baradum.core.filters.EnumFilter("status", 
                             io.github.robertomike.baradum.hefesto.models.Status.class),
-                        new io.github.robertomike.baradum.hefesto.filters.IntervalFilter("age"),
-                        new io.github.robertomike.baradum.hefesto.filters.ExactFilter("country"))
+                        new io.github.robertomike.baradum.core.filters.IntervalFilter("age"),
+                        new io.github.robertomike.baradum.core.filters.ExactFilter("country"))
                 .allowedSort("salary")
                 .withParams(params)
                 .page(15);  // Default page size

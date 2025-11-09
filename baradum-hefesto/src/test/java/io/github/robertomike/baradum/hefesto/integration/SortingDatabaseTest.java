@@ -181,7 +181,7 @@ class SortingDatabaseTest {
         params.put("sort", "-salary");
         
         List<User> users = Baradum.make(User.class)
-                .allowedFilters(new io.github.robertomike.baradum.hefesto.filters.ExactFilter("country"))
+                .allowedFilters(new io.github.robertomike.baradum.core.filters.ExactFilter("country"))
                 .allowedSort("salary")
                 .withParams(params)
                 .get();
@@ -206,8 +206,8 @@ class SortingDatabaseTest {
         
         List<User> users = Baradum.make(User.class)
                 .allowedFilters(
-                        new io.github.robertomike.baradum.hefesto.filters.EnumFilter("status", Status.class),
-                        new io.github.robertomike.baradum.hefesto.filters.IntervalFilter("age"))
+                        new io.github.robertomike.baradum.core.filters.EnumFilter("status", Status.class),
+                        new io.github.robertomike.baradum.core.filters.IntervalFilter("age"))
                 .allowedSort("salary")
                 .withParams(params)
                 .get();

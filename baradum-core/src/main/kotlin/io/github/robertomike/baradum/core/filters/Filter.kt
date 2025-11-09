@@ -81,12 +81,37 @@ abstract class Filter<T : Any, Q : QueryBuilder<*>>(val param: String, val inter
         filterByParam(query, parameter)
     }
 
+    /**
+     * Apply filter using a body map directly instead of using global request.
+     * This allows detached filtering without depending on request context.
+     * 
+     * @param query The query builder to apply the filter to
+     * @param body Map containing the filter parameters
+     */
+    open fun filterByParam(query: Q, body: Map<String, Any?>) {
+        val value = body[param]?.toString() ?: defaultValue
+
+        if (value == null) {
+            return
+        }
+
+        if (ignore(value)) {
+            return
+        }
+
+        filterByParam(query, value)
+    }
+
     @Suppress("UNCHECKED_CAST")
     open fun transform(value: String): T {
         return value as T
     }
 
+    /**
+     * Whether this filter supports being used with body operations (POST with JSON).
+     * Most filters support this by default.
+     */
     open fun supportBodyOperation(): Boolean {
-        return false
+        return true
     }
 }
