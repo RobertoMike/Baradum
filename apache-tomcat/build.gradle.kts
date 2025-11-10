@@ -1,9 +1,7 @@
 plugins {
     kotlin("jvm") version "2.0.21"
     id("java-library")
-    id("maven-publish")
-    id("signing")
-    id("org.jreleaser") version "1.15.0"
+    id("com.vanniktech.maven.publish") version "0.30.0"
 }
 
 group = "io.github.robertomike"
@@ -32,60 +30,9 @@ dependencies {
 tasks.test {
     useJUnitPlatform()
 }
+
 kotlin {
     jvmToolchain(17)
-}
-
-publishing {
-    publications {
-        register("library", MavenPublication::class) {
-            from(components["java"])
-
-            groupId = "$group"
-            artifactId = "baradum-apache-tomcat"
-            version = version
-
-            pom {
-                name = "Baradum"
-                description = "This is an open-source Java library for creation of query with requests and hefesto"
-                url = "https://github.com/RobertoMike/Baradum"
-                inceptionYear = "2024"
-
-                licenses {
-                    license {
-                        name = "MIT License"
-                        url = "http://www.opensource.org/licenses/mit-license.php"
-                    }
-                }
-                developers {
-                    developer {
-                        name = "Roberto Micheletti"
-                        email = "rmworking@hotmail.com"
-                        organization = "Roberto Micheletti"
-                        organizationUrl = "https://github.com/RobertoMike"
-                    }
-                }
-                scm {
-                    connection = "scm:git:git://github.com/RobertoMike/Baradum.git"
-                    developerConnection = "scm:git:ssh://github.com:RobertoMike/Baradum.git"
-                    url = "https://github.com/RobertoMike/Baradum"
-                }
-            }
-        }
-    }
-    repositories {
-        maven {
-            name = "OSSRH"
-            url = uri(layout.buildDirectory.dir("repos/OSSRH"))
-        }
-    }
-}
-
-if (!project.hasProperty("local")) {
-    signing {
-        setRequired { !version.toString().endsWith("SNAPSHOT") }
-        sign(publishing.publications["library"])
-    }
 }
 
 tasks.withType(JavaCompile::class).configureEach {
@@ -99,43 +46,51 @@ tasks.register("printVersion") {
 }
 
 java {
-    withJavadocJar()
-    withSourcesJar()
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(17))
     }
 }
 
-jreleaser {
-    project {
-        description = "This is an open-source Java library for creation of query with requests and hefesto - Apache Tomcat support"
-        authors.add("Roberto Micheletti")
-        license = "MIT"
-        links {
-            homepage = "https://github.com/RobertoMike/Baradum"
-        }
-        inceptionYear = "2024"
+mavenPublishing {
+    publishToMavenCentral(com.vanniktech.maven.publish.SonatypeHost.CENTRAL_PORTAL, automaticRelease = true)
+    
+    // Only sign if credentials are available (CI environment)
+    if (project.hasProperty("signing.keyId")) {
+        signAllPublications()
     }
     
-    signing {
-        active = org.jreleaser.model.Active.NEVER
-        armored = true
-    }
+    coordinates(
+        groupId = project.group.toString(),
+        artifactId = "baradum-apache-tomcat",
+        version = project.version.toString()
+    )
     
-    deploy {
-        maven {
-            mavenCentral {
-                create("sonatype") {
-                    active = org.jreleaser.model.Active.ALWAYS
-                    url = "https://central.sonatype.com/api/v1/publisher"
-                    stagingRepository(layout.buildDirectory.dir("repos/OSSRH").get().toString())
-                    applyMavenCentralRules = true
-                    sign = false
-                    checksums = false
-                    sourceJar = false
-                    javadocJar = false
-                }
+    pom {
+        name.set("Baradum - Apache Tomcat")
+        description.set("This is an open-source Java library for creation of query with requests and hefesto - Apache Tomcat support")
+        url.set("https://github.com/RobertoMike/Baradum")
+        inceptionYear.set("2024")
+        
+        licenses {
+            license {
+                name.set("MIT License")
+                url.set("https://opensource.org/licenses/MIT")
             }
+        }
+        
+        developers {
+            developer {
+                id.set("robertomike")
+                name.set("Roberto Micheletti")
+                email.set("rmworking@hotmail.com")
+                url.set("https://github.com/RobertoMike")
+            }
+        }
+        
+        scm {
+            connection.set("scm:git:git://github.com/RobertoMike/Baradum.git")
+            developerConnection.set("scm:git:ssh://git@github.com/RobertoMike/Baradum.git")
+            url.set("https://github.com/RobertoMike/Baradum")
         }
     }
 }
