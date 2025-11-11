@@ -43,11 +43,37 @@ jobs:
       - name: Build all modules
         run: ./gradlew build -x test --no-daemon
 
-      - name: Publish Baradum
-        if: contains(github.event.release.tag_name, '-baradum') || contains(github.event.release.tag_name, '-all')
+      - name: Publish Baradum Core
+        if: contains(github.event.release.tag_name, '-core') || contains(github.event.release.tag_name, '-all')
         run: |
           export GPG_TTY=$(tty)
-          ./gradlew publishAllPublicationsToMavenCentralRepository \
+          ./gradlew :baradum-core:publishAllPublicationsToMavenCentralRepository \
+            -Psigning.keyId=${{ secrets.GPG_SHORT_KEY }} \
+            -Psigning.password=${{ secrets.GPG_SECRET_KEY_PASSWORD }} \
+            -Psigning.secretKeyRingFile=$HOME/.gnupg/secring.gpg \
+            --no-daemon
+        env:
+          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.OSSRH_USERNAME }}
+          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.OSSRH_TOKEN }}
+
+      - name: Publish Baradum Hefesto
+        if: contains(github.event.release.tag_name, '-hefesto') || contains(github.event.release.tag_name, '-all')
+        run: |
+          export GPG_TTY=$(tty)
+          ./gradlew :baradum-hefesto:publishAllPublicationsToMavenCentralRepository \
+            -Psigning.keyId=${{ secrets.GPG_SHORT_KEY }} \
+            -Psigning.password=${{ secrets.GPG_SECRET_KEY_PASSWORD }} \
+            -Psigning.secretKeyRingFile=$HOME/.gnupg/secring.gpg \
+            --no-daemon
+        env:
+          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.OSSRH_USERNAME }}
+          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.OSSRH_TOKEN }}
+
+      - name: Publish Baradum QueryDSL
+        if: contains(github.event.release.tag_name, '-querydsl') || contains(github.event.release.tag_name, '-all')
+        run: |
+          export GPG_TTY=$(tty)
+          ./gradlew :baradum-querydsl:publishAllPublicationsToMavenCentralRepository \
             -Psigning.keyId=${{ secrets.GPG_SHORT_KEY }} \
             -Psigning.password=${{ secrets.GPG_SECRET_KEY_PASSWORD }} \
             -Psigning.secretKeyRingFile=$HOME/.gnupg/secring.gpg \

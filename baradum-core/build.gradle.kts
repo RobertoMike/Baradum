@@ -2,8 +2,7 @@ plugins {
     kotlin("jvm") version "2.0.21"
     id("org.jetbrains.kotlinx.kover") version "0.8.3"
     id("java-library")
-    id("maven-publish")
-    id("signing")
+    id("com.vanniktech.maven.publish") version "0.30.0"
 }
 
 group = "io.github.robertomike"
@@ -45,41 +44,62 @@ kotlin {
     jvmToolchain(jdkCompileVersion)
 }
 
-publishing {
-    publications {
-        register("library", MavenPublication::class) {
-            from(components["java"])
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(jdkCompileVersion))
+    }
+}
 
-            groupId = "$group"
-            artifactId = "baradum-core"
-            version = version
+tasks.withType<JavaCompile> {
+    options.encoding = "UTF-8"
+}
 
-            pom {
-                name = "Baradum Core"
-                description = "Core abstractions for Baradum filtering library"
-                url = "https://github.com/RobertoMike/Baradum"
-                inceptionYear = "2024"
-
-                licenses {
-                    license {
-                        name = "MIT License"
-                        url = "http://www.opensource.org/licenses/mit-license.php"
-                    }
-                }
-                developers {
-                    developer {
-                        name = "Roberto Micheletti"
-                        email = "rmworking@hotmail.com"
-                        organization = "Roberto Micheletti"
-                        organizationUrl = "https://github.com/RobertoMike"
-                    }
-                }
-                scm {
-                    connection = "scm:git:git://github.com/RobertoMike/Baradum.git"
-                    developerConnection = "scm:git:ssh://github.com:RobertoMike/Baradum.git"
-                    url = "https://github.com/RobertoMike/Baradum"
-                }
+mavenPublishing {
+    publishToMavenCentral(com.vanniktech.maven.publish.SonatypeHost.CENTRAL_PORTAL, automaticRelease = true)
+    
+    // Only sign if credentials are available (CI environment)
+    if (project.hasProperty("signing.keyId")) {
+        signAllPublications()
+    }
+    
+    coordinates(
+        groupId = project.group.toString(),
+        artifactId = "baradum-core",
+        version = project.version.toString()
+    )
+    
+    pom {
+        name.set("Baradum Core")
+        description.set("Core abstractions for Baradum filtering library - an open-source Kotlin/Java library for dynamic filtering and sorting")
+        url.set("https://github.com/RobertoMike/Baradum")
+        inceptionYear.set("2024")
+        
+        licenses {
+            license {
+                name.set("MIT License")
+                url.set("https://opensource.org/licenses/MIT")
             }
         }
+        
+        developers {
+            developer {
+                id.set("robertomike")
+                name.set("Roberto Micheletti")
+                email.set("rmworking@hotmail.com")
+                url.set("https://github.com/RobertoMike")
+            }
+        }
+        
+        scm {
+            connection.set("scm:git:git://github.com/RobertoMike/Baradum.git")
+            developerConnection.set("scm:git:ssh://git@github.com/RobertoMike/Baradum.git")
+            url.set("https://github.com/RobertoMike/Baradum")
+        }
+    }
+}
+
+tasks.register("printVersion") {
+    doLast {
+        println(project.version)
     }
 }

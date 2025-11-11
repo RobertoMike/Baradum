@@ -3,8 +3,7 @@ plugins {
     kotlin("kapt")
     id("org.jetbrains.kotlinx.kover") version "0.8.3"
     id("java-library")
-    id("maven-publish")
-    id("signing")
+    id("com.vanniktech.maven.publish") version "0.30.0"
 }
 
 group = "io.github.robertomike"
@@ -84,33 +83,62 @@ kapt {
     correctErrorTypes = true
 }
 
-publishing {
-    publications {
-        register("library", MavenPublication::class) {
-            from(components["java"])
-            artifactId = "baradum-querydsl"
-            pom {
-                name.set("Baradum QueryDSL")
-                description.set("QueryDSL implementation for Baradum filtering library")
-                url.set("https://github.com/RobertoMike/Baradum")
-                licenses {
-                    license {
-                        name.set("MIT License")
-                        url.set("https://opensource.org/licenses/MIT")
-                    }
-                }
-                developers {
-                    developer {
-                        id.set("robertomike")
-                        name.set("Roberto Mike")
-                    }
-                }
-                scm {
-                    url.set("https://github.com/RobertoMike/Baradum")
-                    connection.set("scm:git:git://github.com/RobertoMike/Baradum.git")
-                    developerConnection.set("scm:git:ssh://git@github.com:RobertoMike/Baradum.git")
-                }
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(jdkCompileVersion))
+    }
+}
+
+tasks.withType<JavaCompile> {
+    options.encoding = "UTF-8"
+}
+
+mavenPublishing {
+    publishToMavenCentral(com.vanniktech.maven.publish.SonatypeHost.CENTRAL_PORTAL, automaticRelease = true)
+    
+    // Only sign if credentials are available (CI environment)
+    if (project.hasProperty("signing.keyId")) {
+        signAllPublications()
+    }
+    
+    coordinates(
+        groupId = project.group.toString(),
+        artifactId = "baradum-querydsl",
+        version = project.version.toString()
+    )
+    
+    pom {
+        name.set("Baradum QueryDSL")
+        description.set("QueryDSL implementation for Baradum filtering library - provides type-safe queries with QueryDSL 5.0+")
+        url.set("https://github.com/RobertoMike/Baradum")
+        inceptionYear.set("2024")
+        
+        licenses {
+            license {
+                name.set("MIT License")
+                url.set("https://opensource.org/licenses/MIT")
             }
         }
+        
+        developers {
+            developer {
+                id.set("robertomike")
+                name.set("Roberto Micheletti")
+                email.set("rmworking@hotmail.com")
+                url.set("https://github.com/RobertoMike")
+            }
+        }
+        
+        scm {
+            connection.set("scm:git:git://github.com/RobertoMike/Baradum.git")
+            developerConnection.set("scm:git:ssh://git@github.com/RobertoMike/Baradum.git")
+            url.set("https://github.com/RobertoMike/Baradum")
+        }
+    }
+}
+
+tasks.register("printVersion") {
+    doLast {
+        println(project.version)
     }
 }
