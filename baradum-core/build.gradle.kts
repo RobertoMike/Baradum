@@ -1,5 +1,6 @@
 plugins {
     kotlin("jvm") version "2.0.21"
+    id("org.jetbrains.kotlinx.kover") version "0.8.3"
     id("java-library")
     id("maven-publish")
     id("signing")

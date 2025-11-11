@@ -43,23 +43,43 @@ jobs:
         if: contains(github.event.release.tag_name, '-all')
         run: |
           gradle build
-          export GPG_TTY=$(tty) && gradle -Psigning.keyId=${{ secrets.GPG_SHORT_KEY }} -Psigning.secretKeyRingFile=/home/runner/.gnupg/secring.gpg -Psigning.password=${GPG_KEY_PASSPHRASE} :publishLibraryPublicationToOSSRHRepository :apache-tomcat:publishLibraryPublicationToOSSRHRepository
+          export GPG_TTY=$(tty) && gradle -Psigning.keyId=${{ secrets.GPG_SHORT_KEY }} -Psigning.secretKeyRingFile=/home/runner/.gnupg/secring.gpg -Psigning.password=${GPG_KEY_PASSPHRASE} :baradum-core:publishLibraryPublicationToOSSRHRepository :baradum-hefesto:publishLibraryPublicationToOSSRHRepository :baradum-querydsl:publishLibraryPublicationToOSSRHRepository :apache-tomcat:publishLibraryPublicationToOSSRHRepository
         env:
           GPG_KEY_PASSPHRASE: ${{ secrets.GPG_SECRET_KEY_PASSWORD }}
           OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           OSSRH_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
 
-      - name: Build and publish to Apache Maven Central Baradum
-        if: contains(github.event.release.tag_name, '-baradum')
+      - name: Build and publish to Apache Maven Central baradum-core
+        if: contains(github.event.release.tag_name, '-core')
         run: |
           gradle build
-          export GPG_TTY=$(tty) && gradle -Psigning.keyId=${{ secrets.GPG_SHORT_KEY }} -Psigning.secretKeyRingFile=/home/runner/.gnupg/secring.gpg -Psigning.password=${GPG_KEY_PASSPHRASE} :publishLibraryPublicationToOSSRHRepository
+          export GPG_TTY=$(tty) && gradle -Psigning.keyId=${{ secrets.GPG_SHORT_KEY }} -Psigning.secretKeyRingFile=/home/runner/.gnupg/secring.gpg -Psigning.password=${GPG_KEY_PASSPHRASE} :baradum-core:publishLibraryPublicationToOSSRHRepository
         env:
           GPG_KEY_PASSPHRASE: ${{ secrets.GPG_SECRET_KEY_PASSWORD }}
           OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           OSSRH_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
 
-      - name: Build and publish to Apache Maven Central Apache tomcat
+      - name: Build and publish to Apache Maven Central baradum-hefesto
+        if: contains(github.event.release.tag_name, '-hefesto')
+        run: |
+          gradle build
+          export GPG_TTY=$(tty) && gradle -Psigning.keyId=${{ secrets.GPG_SHORT_KEY }} -Psigning.secretKeyRingFile=/home/runner/.gnupg/secring.gpg -Psigning.password=${GPG_KEY_PASSPHRASE} :baradum-hefesto:publishLibraryPublicationToOSSRHRepository
+        env:
+          GPG_KEY_PASSPHRASE: ${{ secrets.GPG_SECRET_KEY_PASSWORD }}
+          OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+          OSSRH_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
+
+      - name: Build and publish to Apache Maven Central baradum-querydsl
+        if: contains(github.event.release.tag_name, '-querydsl')
+        run: |
+          gradle build
+          export GPG_TTY=$(tty) && gradle -Psigning.keyId=${{ secrets.GPG_SHORT_KEY }} -Psigning.secretKeyRingFile=/home/runner/.gnupg/secring.gpg -Psigning.password=${GPG_KEY_PASSPHRASE} :baradum-querydsl:publishLibraryPublicationToOSSRHRepository
+        env:
+          GPG_KEY_PASSPHRASE: ${{ secrets.GPG_SECRET_KEY_PASSWORD }}
+          OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+          OSSRH_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
+
+      - name: Build and publish to Apache Maven Central apache-tomcat
         if: contains(github.event.release.tag_name, '-apache-tomcat')
         run: |
           gradle build

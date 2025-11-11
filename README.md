@@ -2,8 +2,9 @@
 
 [![Maven Central](https://img.shields.io/maven-central/v/io.github.robertomike/baradum.svg)](https://search.maven.org/artifact/io.github.robertomike/baradum)
 [![License](https://img.shields.io/github/license/RobertoMike/Baradum)](LICENSE.txt)
+[![Test Coverage](https://img.shields.io/badge/coverage-81%25-green.svg)](build/reports/kover/html/index.html)
 
-Baradum is a powerful library that simplifies filtering and sorting in your Java/Kotlin applications using HefestoSql. It allows you to dynamically filter and sort database queries using URL parameters or request body, eliminating the need for complex conditional logic.
+Baradum is a powerful library that simplifies filtering and sorting in your Java/Kotlin applications. It allows you to dynamically filter and sort database queries using URL parameters or request body, eliminating the need for complex conditional logic.
 
 ## 🚀 What's New in Latest Version
 
@@ -12,10 +13,12 @@ Baradum is a powerful library that simplifies filtering and sorting in your Java
 - **🔢 New Comparison Filters**: GreaterFilter and LessFilter with configurable equality
 - **🏗️ Builder Patterns**: Fluent APIs for complex filter configurations
 - **📚 Comprehensive Documentation**: Complete API reference and migration guides
+- **🔧 Multiple Backend Support**: Hefesto (HefestoSQL) and QueryDSL integrations
 
 ## 📋 Table of Contents
 
 - [Installation](#-installation)
+- [Module Overview](#-module-overview)
 - [Quick Start](#-quick-start)
 - [Filter Types](#-filter-types)
 - [Kotlin Property References](#-kotlin-property-references-type-safe-api)
@@ -28,6 +31,17 @@ Baradum is a powerful library that simplifies filtering and sorting in your Java
 
 ## 📦 Installation
 
+### Module Overview
+
+Baradum is split into multiple modules for flexibility:
+
+| Module | Purpose | Dependencies |
+|--------|---------|--------------|
+| **baradum-core** | Core filtering/sorting logic | None (standalone) |
+| **baradum-hefesto** | HefestoSQL integration | baradum-core, HefestoSQL |
+| **baradum-querydsl** | QueryDSL integration | baradum-core, QueryDSL 5.0+ |
+| **apache-tomcat** | Spring Boot auto-config | baradum-core, Spring Boot |
+
 ### Core Library
 
 <table>
@@ -36,10 +50,18 @@ Baradum is a powerful library that simplifies filtering and sorting in your Java
 <td>
 
 ```xml
+<!-- Core + Hefesto (Hibernate/HefestoSQL) -->
 <dependency>
     <groupId>io.github.robertomike</groupId>
-    <artifactId>baradum</artifactId>
-    <version>2.1.1</version>
+    <artifactId>baradum-hefesto</artifactId>
+    <version>3.0.0</version>
+</dependency>
+
+<!-- OR QueryDSL (Type-safe queries) -->
+<dependency>
+    <groupId>io.github.robertomike</groupId>
+    <artifactId>baradum-querydsl</artifactId>
+    <version>3.0.0</version>
 </dependency>
 ```
 
@@ -48,7 +70,11 @@ Baradum is a powerful library that simplifies filtering and sorting in your Java
 
 ```gradle
 dependencies {
-    implementation 'io.github.robertomike:baradum:2.1.1'
+    // Hefesto (Hibernate/HefestoSQL)
+    implementation 'io.github.robertomike:baradum-hefesto:3.0.0'
+    
+    // OR QueryDSL (Type-safe queries)
+    implementation 'io.github.robertomike:baradum-querydsl:3.0.0'
 }
 ```
 
@@ -64,18 +90,11 @@ dependencies {
 <td>
 
 ```xml
-<!-- Spring Boot 2 -->
+<!-- Spring Boot 3 (Jakarta) -->
 <dependency>
   <groupId>io.github.robertomike</groupId>
   <artifactId>baradum-apache-tomcat</artifactId>
-  <version>1.0.1</version>
-</dependency>
-
-<!-- Spring Boot 3 -->
-<dependency>
-  <groupId>io.github.robertomike</groupId>
-  <artifactId>baradum-apache-tomcat</artifactId>
-  <version>2.0.3</version>
+  <version>3.0.0</version>
 </dependency>
 ```
 
@@ -84,17 +103,76 @@ dependencies {
 
 ```gradle
 dependencies {
-    // Spring Boot 2
-    implementation 'io.github.robertomike:baradum-apache-tomcat:1.0.1'
-    
-    // Spring Boot 3
-    implementation 'io.github.robertomike:baradum-apache-tomcat:2.0.3'
+    // Spring Boot 3 (Jakarta)
+    implementation 'io.github.robertomike:baradum-apache-tomcat:3.0.0'
 }
 ```
 
 </td>
 </tr>
 </table>
+
+### QueryDSL Module (NEW in 3.0.0)
+
+For type-safe queries with QueryDSL 5.0+ and Jakarta Persistence:
+
+<table>
+<tr><th>Maven</th><th>Gradle</th></tr>
+<tr>
+<td>
+
+```xml
+<dependency>
+  <groupId>io.github.robertomike</groupId>
+  <artifactId>baradum-querydsl</artifactId>
+  <version>3.0.0</version>
+</dependency>
+```
+
+</td>
+<td>
+
+```gradle
+dependencies {
+    implementation 'io.github.robertomike:baradum-querydsl:3.0.0'
+}
+```
+
+</td>
+</tr>
+</table>
+
+**Features:**
+- ✅ Full QueryDSL integration with type-safe queries
+- ✅ Extension functions for Q-classes: `QUser.user.baradum(em)`
+- ✅ Jakarta Persistence (JPA 3.0+) support
+- ✅ 11.76x performance boost with global caching
+- ✅ Comprehensive test coverage (90+ tests)
+
+**Quick Example:**
+```kotlin
+val users = QUser.user
+    .baradum(entityManager)
+    .allowedFilters(
+        ExactFilter(User::name),
+        GreaterFilter(User::age, orEqual = true)
+    )
+    .withParams(request.parameterMap)
+    .get()
+```
+
+See [baradum-querydsl/README.md](baradum-querydsl/README.md) for complete documentation.
+
+## 🏆 Test Coverage
+
+| Module | Coverage | Tests | Status |
+|--------|----------|-------|--------|
+| **baradum-core** | 83.8% | 327 tests | ✅ Excellent |
+| **baradum-hefesto** | 82.7% | 198 tests | ✅ Excellent |
+| **baradum-querydsl** | 74.1% | 91 tests | ✅ Good |
+| **Overall** | **80.9%** | **616 tests** | ✅ Very Good |
+
+All core functionality is thoroughly tested with unit and integration tests.
 
 ## 🎯 Quick Start
 

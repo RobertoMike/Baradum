@@ -1,5 +1,6 @@
 plugins {
     kotlin("jvm") version "2.0.21"
+    kotlin("kapt")
     id("org.jetbrains.kotlinx.kover") version "0.8.3"
     id("java-library")
     id("maven-publish")
@@ -15,15 +16,20 @@ repositories {
 }
 
 var jdkCompileVersion = 17
-var hefestoVersion = "3.0.0"
+var querydslVersion = "5.0.0"
 
 dependencies {
     // Core module dependency
     api(project(":baradum-core"))
     
-    // Hefesto dependencies
-    implementation("io.github.robertomike:hefesto-hibernate:$hefestoVersion")
-    api("io.github.robertomike:hefesto-hibernate:$hefestoVersion")
+    // QueryDSL dependencies
+    implementation("com.querydsl:querydsl-jpa:$querydslVersion:jakarta")
+    api("com.querydsl:querydsl-jpa:$querydslVersion:jakarta")
+    kapt("com.querydsl:querydsl-apt:$querydslVersion:jakarta")
+    
+    // Jakarta Persistence API
+    implementation("jakarta.persistence:jakarta.persistence-api:3.1.0")
+    api("jakarta.persistence:jakarta.persistence-api:3.1.0")
 
     compileOnly("org.projectlombok:lombok:1.18.20")
     annotationProcessor("org.projectlombok:lombok:1.18.20")
@@ -36,14 +42,24 @@ dependencies {
     testImplementation("org.mockito:mockito-core:5.4.0")
     testImplementation("org.mockito:mockito-junit-jupiter:5.4.0")
     testImplementation("org.mockito:mockito-inline:5.2.0")
+    testImplementation("org.mockito.kotlin:mockito-kotlin:5.1.0")
     testImplementation("org.apache.commons:commons-lang3:3.12.0")
     testImplementation(kotlin("test"))
+    testImplementation(kotlin("reflect"))
+    
+    // Servlet API for tests
+    testImplementation("org.apache.tomcat.embed:tomcat-embed-core:10.1.11")
     
     // Database for testing
     testImplementation("com.h2database:h2:2.2.224")
     testImplementation("org.hibernate.orm:hibernate-core:6.2.7.Final")
     testImplementation("org.hibernate.orm:hibernate-hikaricp:6.2.7.Final")
     testImplementation("com.zaxxer:HikariCP:5.0.1")
+    testImplementation("jakarta.persistence:jakarta.persistence-api:3.1.0")
+    
+    // QueryDSL APT processor for generating Q-classes
+    kaptTest("com.querydsl:querydsl-apt:$querydslVersion:jakarta")
+    kaptTest("org.hibernate.orm:hibernate-jpamodelgen:6.2.7.Final")
     
     // Logging for Hibernate SQL debugging
     testImplementation("org.apache.logging.log4j:log4j-core:2.20.0")
@@ -60,39 +76,39 @@ kotlin {
     jvmToolchain(jdkCompileVersion)
 }
 
+// Configure KAPT for QueryDSL Q-class generation
+kapt {
+    arguments {
+        arg("querydsl.entityAccessors", "true")
+    }
+    correctErrorTypes = true
+}
+
 publishing {
     publications {
         register("library", MavenPublication::class) {
             from(components["java"])
-
-            groupId = "$group"
-            artifactId = "baradum-hefesto"
-            version = version
-
+            artifactId = "baradum-querydsl"
             pom {
-                name = "Baradum Hefesto"
-                description = "Hefesto implementation for Baradum filtering library"
-                url = "https://github.com/RobertoMike/Baradum"
-                inceptionYear = "2024"
-
+                name.set("Baradum QueryDSL")
+                description.set("QueryDSL implementation for Baradum filtering library")
+                url.set("https://github.com/RobertoMike/Baradum")
                 licenses {
                     license {
-                        name = "MIT License"
-                        url = "http://www.opensource.org/licenses/mit-license.php"
+                        name.set("MIT License")
+                        url.set("https://opensource.org/licenses/MIT")
                     }
                 }
                 developers {
                     developer {
-                        name = "Roberto Micheletti"
-                        email = "rmworking@hotmail.com"
-                        organization = "Roberto Micheletti"
-                        organizationUrl = "https://github.com/RobertoMike"
+                        id.set("robertomike")
+                        name.set("Roberto Mike")
                     }
                 }
                 scm {
-                    connection = "scm:git:git://github.com/RobertoMike/Baradum.git"
-                    developerConnection = "scm:git:ssh://github.com:RobertoMike/Baradum.git"
-                    url = "https://github.com/RobertoMike/Baradum"
+                    url.set("https://github.com/RobertoMike/Baradum")
+                    connection.set("scm:git:git://github.com/RobertoMike/Baradum.git")
+                    developerConnection.set("scm:git:ssh://git@github.com:RobertoMike/Baradum.git")
                 }
             }
         }
