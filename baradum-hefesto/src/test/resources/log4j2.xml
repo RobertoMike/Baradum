@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+    <Appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
+        </Console>
+    </Appenders>
+    
+    <Loggers>
+        <!-- Hibernate SQL statements -->
+        <Logger name="org.hibernate.SQL" level="DEBUG" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+        
+        <!-- Hibernate SQL parameter binding -->
+        <Logger name="org.hibernate.orm.jdbc.bind" level="TRACE" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+        
+        <!-- Hibernate statistics -->
+        <Logger name="org.hibernate.stat" level="DEBUG" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+        
+        <!-- General Hibernate logging -->
+        <Logger name="org.hibernate" level="INFO" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+        
+        <!-- Root logger -->
+        <Root level="INFO">
+            <AppenderRef ref="Console"/>
+        </Root>
+    </Loggers>
+</Configuration>

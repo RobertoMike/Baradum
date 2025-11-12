@@ -1,6 +1,6 @@
 package io.github.robertomike.baradum.configs;
 
-import io.github.robertomike.baradum.Baradum;
+import io.github.robertomike.baradum.core.Baradum;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
