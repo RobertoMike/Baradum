@@ -2,6 +2,7 @@ package io.github.robertomike.baradum.core.filters
 
 import io.github.robertomike.baradum.core.enums.BaradumOperator
 import io.github.robertomike.baradum.core.interfaces.QueryBuilder
+import java.util.UUID
 import kotlin.reflect.KProperty1
 
 /**
@@ -43,7 +44,7 @@ open class ExactFilter : Filter<Any, QueryBuilder<*>> {
         @JvmStatic
         fun of(property: KProperty1<*, *>, param: String): ExactFilter = ExactFilter(property, param)
     }
-    
+
     override fun filterByParam(query: QueryBuilder<*>, value: String) {
         // Convert string value to appropriate type for simple cases
         val convertedValue: Any = when {
@@ -53,6 +54,7 @@ open class ExactFilter : Filter<Any, QueryBuilder<*>> {
             value.matches(Regex("^-?\\d+$")) && value.length < 10 -> value.toInt()
             value.matches(Regex("^-?\\d+$")) -> value.toLong()
             value.matches(Regex("^-?\\d+\\.\\d+$")) -> value.toDouble()
+            value.matches(Regex("[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")) -> UUID.fromString(value)
             else -> value // Keep as string - ORM will handle enum conversion
         }
         query.where(internalName, BaradumOperator.EQUAL, convertedValue)

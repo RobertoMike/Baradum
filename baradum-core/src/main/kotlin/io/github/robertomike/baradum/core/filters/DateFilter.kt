@@ -8,6 +8,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Date
+import kotlin.reflect.KProperty1
 
 /**
  * Generic DateFilter for filtering date and datetime fields.
@@ -49,6 +50,14 @@ open class DateFilter @JvmOverloads constructor(
     private val pattern: String? = null
 ) : Filter<Any, QueryBuilder<*>>(param, internalName) {
 
+    @JvmOverloads
+    constructor(
+        property: KProperty1<*, *>,
+        param: String? = null,
+        dateType: DateType = DateType.LOCAL_DATE,
+        pattern: String? = null
+    ) : this(param ?: property.name, property.name, dateType, pattern)
+
     /**
      * Supported date types for parsing and filtering
      */
@@ -67,6 +76,9 @@ open class DateFilter @JvmOverloads constructor(
         private val param: String,
         private var internalName: String = param
     ) {
+        constructor(property: KProperty1<*, *>) : this(property.name, property.name)
+        constructor(property: KProperty1<*, *>, param: String) : this(param, property.name)
+
         private var dateType: DateType = DateType.LOCAL_DATE
         private var pattern: String? = null
 
@@ -88,6 +100,12 @@ open class DateFilter @JvmOverloads constructor(
         @JvmStatic
         fun builder(param: String): Builder = Builder(param)
 
+        @JvmStatic
+        fun builder(property: KProperty1<*, *>): Builder = Builder(property)
+
+        @JvmStatic
+        fun builder(property: KProperty1<*, *>, param: String): Builder = Builder(property, param)
+
         /**
          * Create a DateFilter for LocalDate with optional custom pattern
          */
@@ -98,6 +116,14 @@ open class DateFilter @JvmOverloads constructor(
             pattern: String? = null,
             internalName: String = param
         ): DateFilter = DateFilter(param, internalName, DateType.LOCAL_DATE, pattern)
+
+        @JvmStatic
+        @JvmOverloads
+        fun forLocalDate(
+            property: KProperty1<*, *>,
+            pattern: String? = null,
+            param: String? = null
+        ): DateFilter = DateFilter(property, param, DateType.LOCAL_DATE, pattern)
 
         /**
          * Create a DateFilter for LocalDateTime with optional custom pattern
@@ -110,6 +136,14 @@ open class DateFilter @JvmOverloads constructor(
             internalName: String = param
         ): DateFilter = DateFilter(param, internalName, DateType.LOCAL_DATE_TIME, pattern)
 
+        @JvmStatic
+        @JvmOverloads
+        fun forLocalDateTime(
+            property: KProperty1<*, *>,
+            pattern: String? = null,
+            param: String? = null
+        ): DateFilter = DateFilter(property, param, DateType.LOCAL_DATE_TIME, pattern)
+
         /**
          * Create a DateFilter for java.util.Date with optional custom pattern
          */
@@ -120,6 +154,14 @@ open class DateFilter @JvmOverloads constructor(
             pattern: String? = null,
             internalName: String = param
         ): DateFilter = DateFilter(param, internalName, DateType.UTIL_DATE, pattern)
+
+        @JvmStatic
+        @JvmOverloads
+        fun forUtilDate(
+            property: KProperty1<*, *>,
+            pattern: String? = null,
+            param: String? = null
+        ): DateFilter = DateFilter(property, param, DateType.UTIL_DATE, pattern)
 
         /**
          * Create a DateFilter for java.sql.Date with optional custom pattern
@@ -132,6 +174,14 @@ open class DateFilter @JvmOverloads constructor(
             internalName: String = param
         ): DateFilter = DateFilter(param, internalName, DateType.SQL_DATE, pattern)
 
+        @JvmStatic
+        @JvmOverloads
+        fun forSqlDate(
+            property: KProperty1<*, *>,
+            pattern: String? = null,
+            param: String? = null
+        ): DateFilter = DateFilter(property, param, DateType.SQL_DATE, pattern)
+
         /**
          * Create a DateFilter for java.sql.Timestamp with optional custom pattern
          */
@@ -142,6 +192,14 @@ open class DateFilter @JvmOverloads constructor(
             pattern: String? = null,
             internalName: String = param
         ): DateFilter = DateFilter(param, internalName, DateType.SQL_TIMESTAMP, pattern)
+
+        @JvmStatic
+        @JvmOverloads
+        fun forSqlTimestamp(
+            property: KProperty1<*, *>,
+            pattern: String? = null,
+            param: String? = null
+        ): DateFilter = DateFilter(property, param, DateType.SQL_TIMESTAMP, pattern)
     }
 
     override fun filterByParam(query: QueryBuilder<*>, value: String) {

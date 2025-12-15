@@ -2,6 +2,8 @@ package io.github.robertomike.baradum.core.filters
 
 import io.github.robertomike.baradum.core.enums.BaradumOperator
 import io.github.robertomike.baradum.core.interfaces.QueryBuilder
+import java.time.LocalDate
+import java.time.LocalDateTime
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.*
 
@@ -19,7 +21,9 @@ class KPropertyFilterTest {
         val age: Int,
         val isActive: Boolean,
         val country: String,
-        val status: UserStatus
+        val status: UserStatus,
+        val createdAt: LocalDate,
+        val updatedAt: LocalDateTime
     )
 
     enum class UserStatus {
@@ -359,5 +363,54 @@ class KPropertyFilterTest {
 
         assertEquals("name", filter.param)
         assertEquals("name", filter.internalName)
+    }
+
+    @Test
+    fun `DateFilter with KProperty should parse LocalDate values`() {
+        val filter = DateFilter(User::createdAt)
+        val query = TestQueryBuilder()
+
+        filter.filterByParam(query, "2024-05-20")
+
+        assertEquals("createdAt", filter.param)
+        assertEquals("createdAt", filter.internalName)
+        assertEquals(1, query.whereCalls.size)
+        assertEquals("createdAt", query.whereCalls[0].field)
+        assertEquals(BaradumOperator.EQUAL, query.whereCalls[0].operator)
+        assertEquals(LocalDate.of(2024, 5, 20), query.whereCalls[0].value)
+    }
+
+    @Test
+    fun `DateFilter LocalDateTime factory with KProperty and custom param`() {
+        val filter = DateFilter.forLocalDateTime(
+            User::updatedAt,
+            pattern = "dd/MM/yyyy HH:mm:ss",
+            param = "updatedAfter"
+        )
+        val query = TestQueryBuilder()
+
+        filter.filterByParam(query, "25/08/2024 13:45:59")
+
+        assertEquals("updatedAfter", filter.param)
+        assertEquals("updatedAt", filter.internalName)
+        assertEquals(1, query.whereCalls.size)
+        assertEquals(BaradumOperator.EQUAL, query.whereCalls[0].operator)
+        assertEquals(LocalDateTime.of(2024, 8, 25, 13, 45, 59), query.whereCalls[0].value)
+    }
+
+    @Test
+    fun `DateFilter builder with KProperty keeps property as internal name`() {
+        val filter = DateFilter.builder(User::createdAt, "createdFrom")
+            .useLocalDateTime()
+            .withPattern("yyyy-MM-dd'T'HH:mm:ss")
+            .build()
+        val query = TestQueryBuilder()
+
+        filter.filterByParam(query, "2024-09-10T08:15:00")
+
+        assertEquals("createdFrom", filter.param)
+        assertEquals("createdAt", filter.internalName)
+        assertEquals(1, query.whereCalls.size)
+        assertEquals(LocalDateTime.of(2024, 9, 10, 8, 15, 0), query.whereCalls[0].value)
     }
 }

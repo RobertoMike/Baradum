@@ -44,10 +44,19 @@ class Baradum<T, Q : QueryBuilder<T>>(
         @JvmStatic
         fun <T, Q : QueryBuilder<T>> make(modelClass: Class<T>): Baradum<T, Q> {
             val provider = providers.firstOrNull { it.supports(modelClass) }
-                ?: throw BaradumException(
-                    "No QueryBuilderProvider found. Make sure you have a query builder module " +
-                    "(e.g., baradum-hefesto) in your classpath and it's properly registered via ServiceLoader."
+
+            if (provider == null && providers.isEmpty()) {
+                throw BaradumException(
+                    "No QueryBuilderProvider found. " +
+                    "Ensure at least one provider is included in the classpath."
                 )
+            } else if (provider == null) {
+                throw BaradumException(
+                    "No QueryBuilderProvider found for model ${modelClass.name}. Check the configuration." +
+                    "Available providers: " + providers.joinToString { it.getName() }
+                )
+
+            }
             
             @Suppress("UNCHECKED_CAST")
             return Baradum(provider.create(modelClass) as Q)

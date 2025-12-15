@@ -66,4 +66,21 @@ interface QueryBuilder<T> {
      * Get access to provider-specific where conditions (if needed)
      */
     fun getWhereConditions(): Any?
+    
+    /**
+     * Get the underlying builder instance cast to the specified type
+     * 
+     * @param builderClass The expected class of the builder
+     * @return The builder instance cast to the specified type
+     * @throws ClassCastException if the builder is not an instance of the specified class
+     */
+    fun <B> getBuilder(builderClass: Class<B>): B {
+        if (builderClass.isInstance(this)) {
+            @Suppress("UNCHECKED_CAST")
+            return this as B
+        }
+        throw ClassCastException(
+            "QueryBuilder is of type ${this::class.qualifiedName} but expected ${builderClass.name}"
+        )
+    }
 }
