@@ -92,6 +92,27 @@ class ComparisonFilterTest {
     }
 
     @Test
+    fun `KProperty constructor uses property name as param and internal name`() {
+        data class Product(val price: Double)
+
+        val kFilter = ComparisonFilter(Product::price)
+        assertEquals("price", kFilter.param)
+        assertEquals("price", kFilter.internalName)
+
+        kFilter.filterByParam(mockQueryBuilder, ">100")
+        verify(mockQueryBuilder).where("price", BaradumOperator.GREATER, "100")
+    }
+
+    @Test
+    fun `of factory method with KProperty and custom param`() {
+        data class Product(val price: Double)
+
+        val kFilter = ComparisonFilter.of(Product::price, "minPrice")
+        assertEquals("minPrice", kFilter.param)
+        assertEquals("price", kFilter.internalName)
+    }
+
+    @Test
     fun `parseOperatorAndValue with negative numbers works`() {
         filter.filterByParam(mockQueryBuilder, ">-10")
         verify(mockQueryBuilder).where("age", BaradumOperator.GREATER, "-10")
@@ -193,7 +214,38 @@ class EnumFilterTest {
     @Test
     fun `filterByParam with two values works`() {
         filter.filterByParam(mockQueryBuilder, "ACTIVE,PENDING")
-        
+
         verify(mockQueryBuilder, times(1)).where(anyOrNull(), anyOrNull(), anyOrNull<Any>(), anyOrNull())
+    }
+
+    @Test
+    fun `KProperty constructor uses property name as internal name, enumClass still required`() {
+        data class Order(val status: TestStatus)
+
+        val kFilter: EnumFilter<TestStatus, QueryBuilder<Any>> = EnumFilter(Order::status, TestStatus::class.java)
+        assertEquals("status", kFilter.param)
+        assertEquals("status", kFilter.internalName)
+
+        kFilter.filterByParam(mockQueryBuilder, "ACTIVE")
+        verify(mockQueryBuilder, times(1)).where(anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull())
+    }
+
+    @Test
+    fun `KProperty constructor with custom param name`() {
+        data class Order(val status: TestStatus)
+
+        val kFilter: EnumFilter<TestStatus, QueryBuilder<Any>> =
+            EnumFilter(Order::status, TestStatus::class.java, "orderStatus")
+        assertEquals("orderStatus", kFilter.param)
+        assertEquals("status", kFilter.internalName)
+    }
+
+    @Test
+    fun `of factory method with KProperty`() {
+        data class Order(val status: TestStatus)
+
+        val kFilter = EnumFilter.of(Order::status, TestStatus::class.java)
+        assertEquals("status", kFilter.param)
+        assertEquals("status", kFilter.internalName)
     }
 }

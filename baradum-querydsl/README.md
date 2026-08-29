@@ -135,7 +135,7 @@ val users = builder.get()
 
 ## Filters that work here
 
-All of `baradum-core`'s filters work unchanged against QueryDSL — see [../FILTER_API_REFERENCE.md](../FILTER_API_REFERENCE.md) for the full list and which ones accept Kotlin property references. There is no QueryDSL-specific `CustomFilter`; if you need one, subclass `Filter<T, QueryDslQueryBuilder<*>>` directly (see [../DOCUMENTATION.md#custom-filters](../DOCUMENTATION.md#custom-filters)).
+All of `baradum-core`'s filters work unchanged against QueryDSL — see [../FILTER_API_REFERENCE.md](../FILTER_API_REFERENCE.md) for the full list and which ones accept Kotlin property references. For a lambda-based custom filter, use the generic `io.github.robertomike.baradum.core.filters.CustomFilter<QueryDslQueryBuilder<*>>` (works with any backend), or subclass `Filter<T, QueryDslQueryBuilder<*>>` directly for anything more involved (see [../DOCUMENTATION.md#custom-filters](../DOCUMENTATION.md#custom-filters)).
 
 ## Operator mapping
 
@@ -149,6 +149,7 @@ All of `baradum-core`'s filters work unchanged against QueryDSL — see [../FILT
 | `LESS_OR_EQUAL` | `LOE` |
 | `LIKE` | `LIKE` |
 | `NOT_LIKE` | `LIKE`, negated |
+| `LIKE_IGNORE_CASE` | `LIKE_IC` |
 | `IN` | `IN` |
 | `NOT_IN` | `NOT_IN` |
 | `IS_NULL` | `IS_NULL` |
@@ -165,7 +166,7 @@ Field-path lookups (mapping a filter's field name to a QueryDSL `Path`) are cach
 |---|---|---|
 | Type safety | Runtime field names | Compile-time-checked Q-classes |
 | Setup | No codegen | Requires the QueryDSL APT processor |
-| Custom queries | `CustomFilter` lambda | Full QueryDSL API via `getQuery()` |
+| Custom queries | `CustomFilter` lambda (Hefesto-typed or generic) | `CustomFilter` lambda (generic), or full QueryDSL API via `getQuery()` |
 | Spring Boot auto-config | ✅ via `baradum-apache-tomcat` | ❌ wire the request manually |
 
 ## Troubleshooting

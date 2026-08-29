@@ -3,6 +3,7 @@ package io.github.robertomike.baradum.hefesto.converters
 import io.github.robertomike.baradum.core.enums.BaradumOperator
 import io.github.robertomike.baradum.core.enums.SortDirection
 import io.github.robertomike.baradum.core.enums.WhereOperator
+import io.github.robertomike.baradum.core.exceptions.BaradumException
 import io.github.robertomike.hefesto.enums.Operator
 import io.github.robertomike.hefesto.enums.Sort
 import io.github.robertomike.hefesto.enums.WhereOperator as HefestoWhereOperator
@@ -76,9 +77,23 @@ class ConvertersTest {
     }
 
     @Test
-    fun `toHefesto converts BETWEEN to fallback correctly`() {
-        // BETWEEN doesn't exist in Hefesto 3, so it falls back to GREATER_OR_EQUAL
-        assertEquals(Operator.GREATER_OR_EQUAL, OperatorConverter.toHefesto(BaradumOperator.BETWEEN))
+    fun `toHefesto throws for BETWEEN since Hefesto has no native operator for it`() {
+        // BETWEEN doesn't exist in Hefesto 3. HefestoQueryBuilder.where() special-cases it via
+        // whereCustom()/cb.between() before ever calling this converter - reaching here would
+        // mean that special-casing was bypassed, so this must fail loudly rather than silently
+        // falling back to GREATER_OR_EQUAL (which used to drop the upper bound entirely).
+        assertThrows(BaradumException::class.java) {
+            OperatorConverter.toHefesto(BaradumOperator.BETWEEN)
+        }
+    }
+
+    @Test
+    fun `toHefesto throws for LIKE_IGNORE_CASE since Hefesto has no native operator for it`() {
+        // Same reasoning as BETWEEN - HefestoQueryBuilder.where() special-cases this via
+        // whereCustom()/cb.lower() before ever calling this converter.
+        assertThrows(BaradumException::class.java) {
+            OperatorConverter.toHefesto(BaradumOperator.LIKE_IGNORE_CASE)
+        }
     }
 
     @Test
@@ -250,15 +265,23 @@ class ConvertersTest {
     }
 
     @Test
-    fun `all BaradumOperator values have toHefesto mapping`() {
+    fun `all BaradumOperator values are handled by toHefesto, either mapped or intentionally rejected`() {
+        // BETWEEN and LIKE_IGNORE_CASE have no native Hefesto operator - HefestoQueryBuilder.where()
+        // special-cases both before calling this converter, so throwing here is the correct,
+        // intentional contract for those two (see the dedicated tests above), not a gap.
+        val operatorsWithoutNativeHefestoMapping = setOf(BaradumOperator.BETWEEN, BaradumOperator.LIKE_IGNORE_CASE)
         val allOperators = BaradumOperator.values()
-        
+
         for (op in allOperators) {
-            assertDoesNotThrow {
-                OperatorConverter.toHefesto(op)
+            if (op in operatorsWithoutNativeHefestoMapping) {
+                assertThrows(BaradumException::class.java) { OperatorConverter.toHefesto(op) }
+            } else {
+                assertDoesNotThrow {
+                    OperatorConverter.toHefesto(op)
+                }
             }
         }
-        
-        assertEquals(13, allOperators.size, "Should test all 13 BaradumOperator values")
+
+        assertEquals(14, allOperators.size, "Should test all 14 BaradumOperator values")
     }
 }

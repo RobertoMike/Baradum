@@ -21,17 +21,20 @@ dependencies {
 | Exact | `ExactFilter("id")` | `?id=123` | `id = 123` | ✅ |
 | Partial | `PartialFilter("name")` | `?name=john` | `name LIKE 'john%'` | ✅ |
 | Search | `SearchFilter.of("name","email")` | `?search=john` | `name LIKE '%j%' OR email LIKE '%j%'` | ❌ |
-| Enum | `EnumFilter("status", Status.class)` | `?status=ACTIVE` | `status = 'ACTIVE'` | ❌ |
-| Interval | `IntervalFilter("age")` | `?age=18-65` | `age >= 18 AND age <= 65` | ❌ |
-| In | `InFilter("country")` | `?country=US,CA` | `country IN ('US','CA')` | ❌ |
-| IsNull | `IsNullFilter("deletedAt")` | `?deletedAt=null` | `deletedAt IS NULL` | ❌ |
-| Comparison | `ComparisonFilter("price")` | `?price=>100` | `price > 100` | ❌ |
+| Enum | `EnumFilter("status", Status.class)` | `?status=ACTIVE` | `status = 'ACTIVE'` | ✅ (enum class still required) |
+| Interval | `IntervalFilter("age")` | `?age=18-65` | `age >= 18 AND age <= 65` | ✅ |
+| In | `InFilter("country")` | `?country=US,CA` | `country IN ('US','CA')` | ✅ |
+| NotIn | `NotInFilter("excluded", "country")` | `?excluded=US,CA` | `country NOT IN ('US','CA')` | ✅ |
+| IsNull | `IsNullFilter("deletedAt")` | `?deletedAt=null` | `deletedAt IS NULL` | ✅ |
+| Comparison | `ComparisonFilter("price")` | `?price=>100` | `price > 100` | ✅ |
 | Greater | `GreaterFilter("age", true)` | `?age=18` | `age >= 18` | ✅ |
 | Less | `LessFilter("age", true)` | `?age=65` | `age <= 65` | ✅ |
 | Date | `DateFilter.forLocalDate("d")` | `?d=>2024-01-01` | `d > '2024-01-01'` | ✅ |
-| Custom *(Hefesto)* | `new CustomFilter<>("f", (q,v) -> ...)` | any | your lambda | ❌ |
+| Custom | `new CustomFilter<>("f", (q,v) -> ...)` | any | your lambda | ❌ |
 
-KProperty = has a constructor taking a Kotlin property reference (`User::field`) instead of a string.
+KProperty = has a constructor taking a Kotlin property reference (`User::field`) instead of a string. Only `SearchFilter` and `CustomFilter` lack one.
+
+`PartialFilter`/`SearchFilter` also take `.setIgnoreCase(true)` for case-insensitive matching.
 
 ## Common patterns
 
@@ -81,8 +84,8 @@ baradum.useBody()                                        // read filters from a 
 
 | Mistake | Fix |
 |---|---|
-| `EnumFilter(User::status, Status::class.java)` | `EnumFilter` has no property-reference constructor — use `EnumFilter("status", Status::class.java)`. |
 | `InFilter("tags").setDelimiter("|")` | There's no `setDelimiter()` — pass it in the constructor: `InFilter("tags", delimiter = "|")`. |
+| `SearchFilter(User::name)` | `SearchFilter` has no property-reference constructor (it takes multiple field names via vararg) — use `SearchFilter.of("name", ...)`. |
 | `.page()` with no arguments | `page(limit, offset)` is required — use `.page(20)` (offset defaults to 0) or `.get()` for everything. |
 | Expecting Spring Boot 2 / Tomcat 9 auto-config | `baradum-apache-tomcat` only wires Spring Boot 3 (Jakarta) + Hefesto today. |
 

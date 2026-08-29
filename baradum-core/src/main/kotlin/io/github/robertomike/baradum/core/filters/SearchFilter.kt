@@ -25,6 +25,7 @@ open class SearchFilter @JvmOverloads constructor(
 
     private var internalNames: List<String> = fields.toList()
     private var strategy: SearchLikeStrategy = SearchLikeStrategy.COMPLETE
+    private var ignoreCase: Boolean = false
 
     companion object {
         /**
@@ -47,15 +48,26 @@ open class SearchFilter @JvmOverloads constructor(
         return this
     }
 
+    /**
+     * When true, matches case-insensitively across every searched field.
+     * Implemented via the database's own LOWER()/case-insensitive LIKE support, so the exact
+     * case-folding behavior follows the underlying columns' collation.
+     */
+    open fun setIgnoreCase(ignoreCase: Boolean): SearchFilter {
+        this.ignoreCase = ignoreCase
+        return this
+    }
+
     override fun filterByParam(query: QueryBuilder<*>, value: String) {
         if (internalNames.isEmpty()) return
 
         val likeValue = strategy.apply(value)
-        
+        val operator = if (ignoreCase) BaradumOperator.LIKE_IGNORE_CASE else BaradumOperator.LIKE
+
         // Use WhereOperator.OR for all search fields except the first
         internalNames.forEachIndexed { index, field ->
             val whereOp = if (index == 0) WhereOperator.AND else WhereOperator.OR
-            query.where(field, BaradumOperator.LIKE, likeValue, whereOp)
+            query.where(field, operator, likeValue, whereOp)
         }
     }
 }

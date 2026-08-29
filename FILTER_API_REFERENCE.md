@@ -1,6 +1,6 @@
 # Baradum Filter API Reference
 
-Exhaustive constructor and behavior reference for every filter in `baradum-core` (plus the Hefesto-only `CustomFilter`). For narrative examples and how filters fit into a full request, see [DOCUMENTATION.md](DOCUMENTATION.md).
+Exhaustive constructor and behavior reference for every filter in `baradum-core` (plus the Hefesto-specific `CustomFilter`). For narrative examples and how filters fit into a full request, see [DOCUMENTATION.md](DOCUMENTATION.md).
 
 ## Table of Contents
 
@@ -11,13 +11,15 @@ Exhaustive constructor and behavior reference for every filter in `baradum-core`
 - [EnumFilter](#enumfilter)
 - [IntervalFilter](#intervalfilter)
 - [InFilter](#infilter)
+- [NotInFilter](#notinfilter)
 - [IsNullFilter](#isnullfilter)
 - [ComparisonFilter](#comparisonfilter)
 - [GreaterFilter](#greaterfilter)
 - [LessFilter](#lessfilter)
 - [DateFilter](#datefilter)
-- [CustomFilter (Hefesto module)](#customfilter-hefesto-module)
+- [CustomFilter](#customfilter)
 - [Writing your own filter](#writing-your-own-filter)
+- [The BETWEEN operator](#the-between-operator)
 - [Errors](#errors)
 
 ---
@@ -32,7 +34,7 @@ Exhaustive constructor and behavior reference for every filter in `baradum-core`
 // declared on every concrete filter individually — signature varies per filter, see below
 Filter(param: String, internalName: String)
 
-// only on filters that explicitly support it: ExactFilter, PartialFilter, GreaterFilter, LessFilter, DateFilter
+// on every filter except SearchFilter (whose multiple field names don't map onto one property)
 Filter(property: KProperty1<*, *>, param: String? = null)
 ```
 
@@ -91,6 +93,7 @@ PartialFilter(param: String, internalName: String = param)
 PartialFilter(property: KProperty1<*, *>, param: String? = null)
 
 fun setStrategy(strategy: SearchLikeStrategy): PartialFilter
+fun setIgnoreCase(ignoreCase: Boolean): PartialFilter   // default: false
 
 // factory methods
 PartialFilter.of(property: KProperty1<*, *>): PartialFilter
@@ -102,7 +105,10 @@ PartialFilter.of(property: KProperty1<*, *>, param: String): PartialFilter
 ```kotlin
 PartialFilter("username")                                       // ?username=john -> 'john%'
 PartialFilter(User::email, "search").setStrategy(SearchLikeStrategy.COMPLETE) // -> '%john%'
+PartialFilter("username").setIgnoreCase(true)                   // ?username=JOHN matches 'john'
 ```
+
+`setIgnoreCase(true)` emits `BaradumOperator.LIKE_IGNORE_CASE` instead of `LIKE`. QueryDSL implements it natively (`Ops.LIKE_IC`); Hefesto implements it via a raw `LOWER(field) LIKE LOWER(value)` predicate, since Hefesto's own operator set has no case-insensitive `LIKE`. Either way, the exact case-folding behavior follows whatever the underlying database and column collation do with `LOWER()` — not a claim of locale-aware Unicode case folding.
 
 ---
 
@@ -115,6 +121,7 @@ SearchFilter(param: String, vararg fields: String)
 
 fun setInternalNames(names: List<String>): SearchFilter
 fun setStrategy(strategy: SearchLikeStrategy): SearchFilter   // default: COMPLETE
+fun setIgnoreCase(ignoreCase: Boolean): SearchFilter          // default: false, applies to every field
 
 // factory method — defaults param to "search"
 SearchFilter.of(vararg fields: String): SearchFilter
@@ -134,7 +141,7 @@ The default strategy here is `COMPLETE` (`%value%`), unlike `PartialFilter`'s de
 
 ## EnumFilter
 
-Enum matching, single value or comma-separated `IN`. **No Kotlin property-reference constructor** — the enum `Class` always has to be passed explicitly, and Kotlin has no way to infer it from a property reference alone.
+Enum matching, single value or comma-separated `IN`. Has a Kotlin property-reference constructor, but the enum `Class` always has to be passed explicitly regardless — Kotlin has no way to infer it from a property reference alone.
 
 ```kotlin
 EnumFilter<E : Enum<E>, Q : QueryBuilder<*>>(
@@ -142,6 +149,15 @@ EnumFilter<E : Enum<E>, Q : QueryBuilder<*>>(
     internalName: String = param,
     enumClass: Class<E>
 )
+EnumFilter<E : Enum<E>, Q : QueryBuilder<*>>(
+    property: KProperty1<*, *>,
+    enumClass: Class<E>,
+    param: String? = null
+)
+
+// factory methods
+EnumFilter.of(property: KProperty1<*, *>, enumClass: Class<E>): EnumFilter<E, QueryBuilder<*>>
+EnumFilter.of(property: KProperty1<*, *>, enumClass: Class<E>, param: String): EnumFilter<E, QueryBuilder<*>>
 ```
 
 ```java
@@ -152,16 +168,26 @@ EnumFilter("status", Status.class)
 EnumFilter("status", "order_status", OrderStatus.class)  // custom internal name
 ```
 
+```kotlin
+EnumFilter(User::status, Status::class.java)                  // ?status=ACTIVE
+EnumFilter(Order::status, OrderStatus::class.java, "orderStatus")  // custom param name
+```
+
 Throws `FilterException` (listing the allowed values) if the incoming value isn't a valid enum constant.
 
 ---
 
 ## IntervalFilter
 
-Numeric range filtering. **No Kotlin property-reference constructor.**
+Numeric range filtering.
 
 ```kotlin
 IntervalFilter(param: String, internalName: String = param)
+IntervalFilter(property: KProperty1<*, *>, param: String? = null)
+
+// factory methods
+IntervalFilter.of(property: KProperty1<*, *>): IntervalFilter
+IntervalFilter.of(property: KProperty1<*, *>, param: String): IntervalFilter
 ```
 
 | Input | Result |
@@ -170,16 +196,25 @@ IntervalFilter(param: String, internalName: String = param)
 | `18-65` | `field >= 18 AND field <= 65` |
 | `18,65` | same as `18-65` (comma accepted for backward compatibility) |
 | `18-` | `field >= 18` |
-| `-65` | `field <= 65` |
+| `-65` | `field <= 65` (treated as "max only", not exact `-65` — see below) |
+| `-10--5` | `field >= -10 AND field <= -5` |
+| ` 18 - 65 ` | same as `18-65` — surrounding/internal whitespace is tolerated |
+
+A bare negative number like `-65` is always read as "max only" for backward compatibility, since the dash that starts a negative number is indistinguishable from the range separator in that position — the fully-negative-range case (`-10--5`) is unambiguous and parses correctly, but a single negative exact value does not. Use `ComparisonFilter` or `ExactFilter` if you need an unambiguous exact negative match.
 
 ---
 
 ## InFilter
 
-`IN (...)` with a configurable delimiter. **No Kotlin property-reference constructor.**
+`IN (...)` with a configurable delimiter.
 
 ```kotlin
 InFilter(param: String, internalName: String = param, delimiter: String = ",")
+InFilter(property: KProperty1<*, *>, param: String? = null, delimiter: String = ",")
+
+// factory methods
+InFilter.of(property: KProperty1<*, *>): InFilter
+InFilter.of(property: KProperty1<*, *>, param: String): InFilter
 ```
 
 The delimiter is a constructor parameter, fixed at creation — there is no `setDelimiter()` method.
@@ -188,18 +223,45 @@ The delimiter is a constructor parameter, fixed at creation — there is no `set
 InFilter("country")                        // ?country=US,CA,MX -> country IN ('US','CA','MX')
 InFilter("ids", "ids", "|")                // ?ids=1|2|3        -> id IN (1,2,3)
 InFilter("tags", delimiter = "|")          // same, named argument
+InFilter(User::country, "countries")       // Kotlin property reference
 ```
 
 Throws `FilterException` if the value list ends up empty (e.g. an empty string).
 
 ---
 
+## NotInFilter
+
+`NOT IN (...)` — the mirror image of `InFilter`, same constructors, same delimiter behavior, opposite operator.
+
+```kotlin
+NotInFilter(param: String, internalName: String = param, delimiter: String = ",")
+NotInFilter(property: KProperty1<*, *>, param: String? = null, delimiter: String = ",")
+
+// factory methods
+NotInFilter.of(property: KProperty1<*, *>): NotInFilter
+NotInFilter.of(property: KProperty1<*, *>, param: String): NotInFilter
+```
+
+```kotlin
+NotInFilter("excludedCountries", "country")   // ?excludedCountries=US,CA -> country NOT IN ('US','CA')
+```
+
+Throws `FilterException` if the value list ends up empty.
+
+---
+
 ## IsNullFilter
 
-`IS NULL` / `IS NOT NULL`. **No Kotlin property-reference constructor.**
+`IS NULL` / `IS NOT NULL`.
 
 ```kotlin
 IsNullFilter(param: String, internalName: String = param)
+IsNullFilter(property: KProperty1<*, *>, param: String? = null)
+
+// factory methods
+IsNullFilter.of(property: KProperty1<*, *>): IsNullFilter
+IsNullFilter.of(property: KProperty1<*, *>, param: String): IsNullFilter
 ```
 
 | Input (case-insensitive) | Result |
@@ -212,10 +274,15 @@ IsNullFilter(param: String, internalName: String = param)
 
 ## ComparisonFilter
 
-One parameter, any comparison operator via a prefix. **No Kotlin property-reference constructor.**
+One parameter, any comparison operator via a prefix.
 
 ```kotlin
 ComparisonFilter(param: String, internalName: String = param)
+ComparisonFilter(property: KProperty1<*, *>, param: String? = null)
+
+// factory methods
+ComparisonFilter.of(property: KProperty1<*, *>): ComparisonFilter
+ComparisonFilter.of(property: KProperty1<*, *>, param: String): ComparisonFilter
 ```
 
 | Prefix | Operator | Example |
@@ -331,9 +398,27 @@ Throws `FilterException` (naming the expected pattern and date type) when the va
 
 ---
 
-## CustomFilter (Hefesto module)
+## CustomFilter
 
-`io.github.robertomike.baradum.hefesto.filters.CustomFilter` — lambda-based filtering, Hefesto backend only.
+Lambda-based filtering, in two flavors:
+
+**`io.github.robertomike.baradum.core.filters.CustomFilter`** — generic, works with any backend (Hefesto, QueryDSL, or a custom `QueryBuilder`):
+
+```kotlin
+CustomFilter<Q : QueryBuilder<*>>(param: String, consumer: BiConsumer<Q, String>)
+```
+
+```kotlin
+CustomFilter<QueryDslQueryBuilder<*>>("status") { query, value ->
+    if (value == "premium") {
+        query.where("subscription_level", BaradumOperator.GREATER, 5)
+    } else {
+        query.where("status", BaradumOperator.EQUAL, value)
+    }
+}
+```
+
+**`io.github.robertomike.baradum.hefesto.filters.CustomFilter`** — pre-typed to `HefestoQueryBuilder`, slightly terser for Hefesto-only code:
 
 ```kotlin
 CustomFilter(param: String, consumer: BiConsumer<HefestoQueryBuilder<out BaseModel>, String>)
@@ -349,7 +434,7 @@ new CustomFilter<>("status", (query, value) -> {
 })
 ```
 
-There's no core-module equivalent and no QueryDSL-specific one — see [Writing your own filter](#writing-your-own-filter) if you're on QueryDSL.
+Both work identically — pick whichever fits. Neither has a Kotlin property-reference constructor (the param is always a plain request-parameter name); see [Writing your own filter](#writing-your-own-filter) for anything needing more than a single lambda.
 
 ---
 
@@ -388,11 +473,15 @@ class PriceRangeFilter<Q : QueryBuilder<*>> : Filter<Pair<Double, Double>, Q> {
 }
 ```
 
+## The BETWEEN operator
+
+No built-in filter emits `BaradumOperator.BETWEEN` directly (`IntervalFilter`/`DateFilter` build ranges as two separate `GREATER_OR_EQUAL`/`LESS_OR_EQUAL` calls instead), but it's fully supported if you reach it yourself — via a [body request](DOCUMENTATION.md#body-based-filtering) (`"operator": "BETWEEN"`, `"value": "25,33"`), a [custom filter](#customfilter), or a direct `.where("age", BaradumOperator.BETWEEN, listOf(25, 33))` call. Both backends implement it as a real `BETWEEN` predicate; on Hefesto, which has no native `BETWEEN` operator, it's built via a raw Criteria API predicate. A body request must supply exactly two comma-separated values, or it throws `FilterException`.
+
 ## Errors
 
 | Exception | Thrown when |
 |---|---|
-| `FilterException` | Invalid input for a filter (bad enum value, unparseable date, empty required value, disallowed body field). |
+| `FilterException` | Invalid input for a filter (bad enum value, unparseable date, empty required value, disallowed body field, wrong number of values for `BETWEEN`). |
 | `SortableException` | An unrecognized field is requested via `?sort=` or a body `sorts` entry. |
 | `BaradumException` | No `QueryBuilderProvider` found for `Baradum.make(Class)`, or a malformed JSON body. |
 

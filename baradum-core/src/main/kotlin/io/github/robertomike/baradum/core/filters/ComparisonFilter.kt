@@ -3,11 +3,12 @@ package io.github.robertomike.baradum.core.filters
 import io.github.robertomike.baradum.core.enums.BaradumOperator
 import io.github.robertomike.baradum.core.exceptions.FilterException
 import io.github.robertomike.baradum.core.interfaces.QueryBuilder
+import kotlin.reflect.KProperty1
 
 /**
  * Generic filter for comparison operations.
  * Supports: GREATER (>), LESS (<), GREATER_OR_EQUAL (>=), LESS_OR_EQUAL (<=), DIFF (!=)
- * 
+ *
  * Usage examples:
  * - ">25" - Greater than 25
  * - ">=18" - Greater than or equal to 18
@@ -15,13 +16,30 @@ import io.github.robertomike.baradum.core.interfaces.QueryBuilder
  * - "<=65" - Less than or equal to 65
  * - "!=0" - Not equal to 0
  * - "25" - Defaults to EQUAL if no operator prefix
- * 
+ *
  * @param Q QueryBuilder type
  */
-open class ComparisonFilter @JvmOverloads constructor(
-    param: String,
-    internalName: String = param
-) : Filter<String, QueryBuilder<*>>(param, internalName) {
+open class ComparisonFilter : Filter<String, QueryBuilder<*>> {
+
+    @JvmOverloads
+    constructor(param: String, internalName: String = param) : super(param, internalName)
+
+    /**
+     * Type-safe constructor using Kotlin property reference
+     */
+    @JvmOverloads
+    constructor(property: KProperty1<*, *>, param: String? = null) : super(property, param)
+
+    companion object {
+        /**
+         * Factory method for creating ComparisonFilter with KProperty
+         */
+        @JvmStatic
+        fun of(property: KProperty1<*, *>): ComparisonFilter = ComparisonFilter(property)
+
+        @JvmStatic
+        fun of(property: KProperty1<*, *>, param: String): ComparisonFilter = ComparisonFilter(property, param)
+    }
 
     /**
      * Parse the value and apply the appropriate comparison operator.
@@ -29,11 +47,11 @@ open class ComparisonFilter @JvmOverloads constructor(
      */
     override fun filterByParam(query: QueryBuilder<*>, value: String) {
         val (operator, cleanValue) = parseOperatorAndValue(value)
-        
+
         if (cleanValue.isEmpty()) {
             throw FilterException("Value cannot be empty for comparison filter '$param'")
         }
-        
+
         query.where(internalName, operator, cleanValue)
     }
 

@@ -190,6 +190,7 @@ class QueryDslQueryBuilder<T>(
             BaradumOperator.LESS_OR_EQUAL -> createLessOrEqualPredicate(path, value)
             BaradumOperator.LIKE -> createLikePredicate(path, value)
             BaradumOperator.NOT_LIKE -> createNotLikePredicate(path, value)
+            BaradumOperator.LIKE_IGNORE_CASE -> createLikeIgnoreCasePredicate(path, value)
             BaradumOperator.IN -> createInPredicate(path, value)
             BaradumOperator.NOT_IN -> createNotInPredicate(path, value)
             BaradumOperator.IS_NULL -> createIsNullPredicate(path)
@@ -301,6 +302,13 @@ class QueryDslQueryBuilder<T>(
         return when (path) {
             is StringPath -> path.notLike(value as String)
             else -> throw IllegalArgumentException("NOT LIKE operator can only be used with String fields")
+        }
+    }
+
+    private fun createLikeIgnoreCasePredicate(path: Path<*>, value: Any?): Predicate {
+        return when (path) {
+            is StringPath -> path.likeIgnoreCase(value as String)
+            else -> throw IllegalArgumentException("LIKE_IGNORE_CASE operator can only be used with String fields")
         }
     }
 

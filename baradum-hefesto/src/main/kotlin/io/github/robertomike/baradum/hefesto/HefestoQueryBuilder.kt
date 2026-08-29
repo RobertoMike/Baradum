@@ -10,9 +10,11 @@ import io.github.robertomike.baradum.hefesto.converters.SortConverter
 import io.github.robertomike.baradum.hefesto.converters.WhereOperatorConverter
 import io.github.robertomike.hefesto.actions.Select
 import io.github.robertomike.hefesto.actions.wheres.Where
+import io.github.robertomike.hefesto.actions.wheres.WhereCustom
 import io.github.robertomike.hefesto.builders.Hefesto
 import io.github.robertomike.hefesto.constructors.ConstructWhereImplementation
 import io.github.robertomike.hefesto.models.BaseModel
+import jakarta.persistence.criteria.Expression
 import java.util.Optional
 
 /**
@@ -25,14 +27,52 @@ class HefestoQueryBuilder<T : BaseModel>(
     constructor(modelClass: Class<T>) : this(Hefesto.make(modelClass))
 
     override fun where(field: String, operator: BaradumOperator, value: Any?, whereOperator: WhereOperator): QueryBuilder<T> {
-        val whereClause = Where(
-            field,
-            OperatorConverter.toHefesto(operator),
-            value,
-            WhereOperatorConverter.toHefesto(whereOperator)
-        )
-        hefestoBuilder.where(whereClause)
+        // Hefesto's own Operator enum has no BETWEEN and no case-insensitive LIKE, so these two
+        // are built directly as raw Criteria API predicates instead of going through Where(...).
+        when (operator) {
+            BaradumOperator.BETWEEN -> applyBetween(field, value, whereOperator)
+            BaradumOperator.LIKE_IGNORE_CASE -> applyLikeIgnoreCase(field, value, whereOperator)
+            else -> {
+                val whereClause = Where(
+                    field,
+                    OperatorConverter.toHefesto(operator),
+                    value,
+                    WhereOperatorConverter.toHefesto(whereOperator)
+                )
+                hefestoBuilder.where(whereClause)
+            }
+        }
         return this
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun applyBetween(field: String, value: Any?, whereOperator: WhereOperator) {
+        val (low, high) = when (value) {
+            is List<*> -> value[0] to value[1]
+            is Pair<*, *> -> value.first to value.second
+            is Array<*> -> value[0] to value[1]
+            else -> throw IllegalArgumentException("BETWEEN operator requires a pair of values")
+        }
+
+        val custom = WhereCustom.Custom { cb, _, root, _, _ ->
+            cb.between(
+                root.get<Comparable<Any>>(field) as Expression<Comparable<Any>>,
+                low as Comparable<Any>,
+                high as Comparable<Any>
+            )
+        }
+
+        if (whereOperator == WhereOperator.OR) hefestoBuilder.orWhereCustom(custom) else hefestoBuilder.whereCustom(custom)
+    }
+
+    private fun applyLikeIgnoreCase(field: String, value: Any?, whereOperator: WhereOperator) {
+        val pattern = (value as String).lowercase()
+
+        val custom = WhereCustom.Custom { cb, _, root, _, _ ->
+            cb.like(cb.lower(root.get<String>(field)), pattern)
+        }
+
+        if (whereOperator == WhereOperator.OR) hefestoBuilder.orWhereCustom(custom) else hefestoBuilder.whereCustom(custom)
     }
 
     override fun orderBy(field: String, direction: SortDirection): QueryBuilder<T> {

@@ -376,10 +376,55 @@ class FilterableTest {
         )
         
         filterable.apply(query, listOf(filterRequest))
-        
+
         assertEquals(1, query.whereCalls.size)
         val result = query.whereCalls[0].value as List<*>
         assertEquals(listOf(1, 2, 3), result)
+    }
+
+    @Test
+    fun `apply with FilterRequest handles BETWEEN operator by splitting into a two-element list`() {
+        // Regression test: BETWEEN used to fall into the generic "single transformed value" branch
+        // here, which QueryDslQueryBuilder.createBetweenPredicate rejects (it requires a
+        // Pair/List of exactly two values) and which HefestoQueryBuilder used to silently turn
+        // into GREATER_OR_EQUAL only, dropping the upper bound entirely.
+        val filterable = Filterable<TestQueryBuilder>()
+        filterable.addFilters(IntFilter("age"))
+
+        val query = TestQueryBuilder()
+        val filterRequest = FilterRequest(
+            field = "age",
+            value = "25,33",
+            operator = BaradumOperator.BETWEEN,
+            type = WhereOperator.AND,
+            subFilters = emptyList()
+        )
+
+        filterable.apply(query, listOf(filterRequest))
+
+        assertEquals(1, query.whereCalls.size)
+        assertEquals(BaradumOperator.BETWEEN, query.whereCalls[0].operator)
+        val result = query.whereCalls[0].value as List<*>
+        assertEquals(listOf(25, 33), result)
+    }
+
+    @Test
+    fun `apply with FilterRequest throws for BETWEEN with anything other than exactly two values`() {
+        val filterable = Filterable<TestQueryBuilder>()
+        filterable.addFilters(IntFilter("age"))
+
+        val query = TestQueryBuilder()
+        val filterRequest = FilterRequest(
+            field = "age",
+            value = "25",
+            operator = BaradumOperator.BETWEEN,
+            type = WhereOperator.AND,
+            subFilters = emptyList()
+        )
+
+        assertThrows<FilterException> {
+            filterable.apply(query, listOf(filterRequest))
+        }
     }
 
     @Test

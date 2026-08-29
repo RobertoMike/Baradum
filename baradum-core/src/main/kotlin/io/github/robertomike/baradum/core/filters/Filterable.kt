@@ -75,6 +75,14 @@ class Filterable<Q : QueryBuilder<*>> {
             BaradumOperator.IN, BaradumOperator.NOT_IN -> notNullValue(value, operator).split(",")
                 .map(filterDef::transform)
 
+            BaradumOperator.BETWEEN -> {
+                val bounds = notNullValue(value, operator).split(",").map(filterDef::transform)
+                if (bounds.size != 2) {
+                    throw FilterException("BETWEEN operator requires exactly two comma-separated values for '${filterRequest.field}', got: $value")
+                }
+                bounds
+            }
+
             BaradumOperator.IS_NULL, BaradumOperator.IS_NOT_NULL -> null
             else -> filterDef.transform(notNullValue(value, operator))
         }

@@ -1,8 +1,10 @@
 package io.github.robertomike.baradum.querydsl
 
 import io.github.robertomike.baradum.core.enums.BaradumOperator
+import io.github.robertomike.baradum.core.enums.SearchLikeStrategy
 import io.github.robertomike.baradum.core.enums.SortDirection
 import io.github.robertomike.baradum.core.enums.WhereOperator
+import io.github.robertomike.baradum.core.filters.PartialFilter
 import io.github.robertomike.baradum.querydsl.entities.QUser
 import io.github.robertomike.baradum.querydsl.entities.User
 import io.github.robertomike.baradum.querydsl.entities.UserStatus
@@ -258,13 +260,37 @@ class QueryDslIntegrationTest : BaseJpaTest() {
     @Test
     fun `test LIKE operator case sensitivity`() {
         val queryBuilder = QueryDslQueryBuilder(QUser.user, entityManager)
-        
+
         // H2 LIKE is case-sensitive by default (unlike some other databases)
         val results = queryBuilder
             .where("name", BaradumOperator.LIKE, "%Alice%")
             .get()
-        
+
         assertEquals(1, results.size)
+    }
+
+    @Test
+    fun `test LIKE_IGNORE_CASE operator matches regardless of case`() {
+        // Wrong-case pattern that the sibling case-sensitivity test above proves plain LIKE
+        // would reject on this same H2 setup.
+        val results = QueryDslQueryBuilder(QUser.user, entityManager)
+            .where("name", BaradumOperator.LIKE_IGNORE_CASE, "%ALICE%")
+            .get()
+
+        assertEquals(1, results.size)
+        assertEquals("Alice Smith", results[0].name)
+    }
+
+    @Test
+    fun `test LIKE_IGNORE_CASE operator via PartialFilter setIgnoreCase`() {
+        val filter = PartialFilter("name").setStrategy(SearchLikeStrategy.COMPLETE).setIgnoreCase(true)
+        val queryBuilder = QueryDslQueryBuilder(QUser.user, entityManager)
+
+        filter.filterByParam(queryBuilder, "ALICE")
+
+        val results = queryBuilder.get()
+        assertEquals(1, results.size)
+        assertEquals("Alice Smith", results[0].name)
     }
 
     // ========== NOT_LIKE OPERATOR TESTS ==========

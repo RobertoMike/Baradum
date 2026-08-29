@@ -83,10 +83,19 @@ class Baradum<T, Q : QueryBuilder<T>>(
         }
         
         /**
-         * Global request for Baradum to resolve params and body
-         * @deprecated Consider using withParams() for instance-level parameters
+         * Global request for Baradum to resolve params and body.
+         *
+         * This is a single field shared process-wide. It's safe to rely on only when your
+         * framework hands you a per-request-safe value here (e.g. Spring's request-scoped
+         * `HttpServletRequest` proxy, as `baradum-apache-tomcat`'s auto-configuration does) -
+         * otherwise prefer [Baradum.withParams]/[Baradum.withParam], which have no shared state.
          */
-        @JvmStatic 
+        @JvmStatic
+        @Deprecated(
+            message = "Prefer withParams()/withParam() on the Baradum instance - they avoid shared mutable state. " +
+                "This field remains for framework auto-configuration (e.g. baradum-apache-tomcat) that relies on a " +
+                "per-request-safe value being assigned here.",
+        )
         var request: BasicRequest<out Any>? = null
     }
 
@@ -186,6 +195,7 @@ class Baradum<T, Q : QueryBuilder<T>>(
     /**
      * Apply the filters and sorts based on priority: instance params > body > global request
      */
+    @Suppress("DEPRECATION")
     private fun apply() {
         when {
             instanceParams != null -> {

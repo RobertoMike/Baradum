@@ -50,11 +50,11 @@ Baradum's core module has no idea how to talk to a database; it only knows how t
 
 | | Hefesto | QueryDSL |
 |---|---|---|
-| Entry point | `io.github.robertomike.baradum.hefesto.Baradum.make(User::class.java)` | `QueryDslBaradum.make(QUser.user, entityManager)` or `QUser.user.baradum(entityManager)` |
+| Entry point | `HefestoBaradum.make(User::class.java)` | `QueryDslBaradum.make(QUser.user, entityManager)` or `QUser.user.baradum(entityManager)` |
 | Requires | Your entity extends Hefesto's `BaseModel` | A generated Q-class for the entity (QueryDSL APT) |
-| Custom lambda filter | `io.github.robertomike.baradum.hefesto.filters.CustomFilter` | write a `Filter<T, QueryDslQueryBuilder<*>>` subclass |
+| Custom lambda filter | `io.github.robertomike.baradum.hefesto.filters.CustomFilter`, or the generic `io.github.robertomike.baradum.core.filters.CustomFilter` | the same generic `core.filters.CustomFilter`, or write a `Filter<T, QueryDslQueryBuilder<*>>` subclass |
 
-> **Watch the imports.** There are two different classes named `Baradum` in this library: `io.github.robertomike.baradum.core.Baradum` (the generic one, shown below) and `io.github.robertomike.baradum.hefesto.Baradum` (a typed Hefesto-only shortcut). Both expose `.make(...)`, but they resolve the query backend differently — see below. QueryDSL has no such shortcut class; always go through `QueryDslBaradum` or the `EntityPathBase` extension functions.
+> **Watch the imports.** `io.github.robertomike.baradum.hefesto.HefestoBaradum` is named to match `QueryDslBaradum`. It used to just be called `Baradum` — that name is kept as a deprecated compatibility shim, but it was easy to confuse with the generic, ServiceLoader-based `io.github.robertomike.baradum.core.Baradum` shown below, so prefer `HefestoBaradum` going forward. QueryDSL has no such shortcut class; always go through `QueryDslBaradum` or the `EntityPathBase` extension functions.
 
 There's also a generic, backend-agnostic factory on the **core** `Baradum` class:
 
@@ -66,7 +66,7 @@ Baradum.make(User::class.java) // resolves a backend via ServiceLoader
 
 This uses Java's `ServiceLoader` to find whichever `QueryBuilderProvider` is on your classpath and `supports()` your model class. Today, **only `baradum-hefesto` registers a provider** (it requires your model to extend Hefesto's `BaseModel`); `baradum-querydsl` has no `ServiceLoader` provider because a QueryDSL query builder also needs a Q-class and an `EntityManager`/`JPAQueryFactory`, which a bare `Class<T>` can't supply. Practically:
 
-- **Hefesto users** can use either `io.github.robertomike.baradum.core.Baradum.make(User::class.java)` or `io.github.robertomike.baradum.hefesto.Baradum.make(User::class.java)` — same result, the hefesto-package one just skips the `ServiceLoader` lookup.
+- **Hefesto users** can use either `io.github.robertomike.baradum.core.Baradum.make(User::class.java)` or `HefestoBaradum.make(User::class.java)` — same result, the latter just skips the `ServiceLoader` lookup.
 - **QueryDSL users** must always use `QueryDslBaradum.make(...)` or the `.baradum(...)` extension function.
 
 ## Quick start
@@ -130,9 +130,10 @@ Automatically converts `"true"`/`"false"` to `Boolean`, digit strings to `Int`/`
 ```kotlin
 PartialFilter(User::username)                                   // ?username=john -> LIKE 'john%'
 PartialFilter(User::email, "search").setStrategy(SearchLikeStrategy.COMPLETE) // -> LIKE '%john%'
+PartialFilter(User::username).setIgnoreCase(true)                // ?username=JOHN matches 'john'
 ```
 
-Strategies: `FINAL` (`value%`, default), `START` (`%value`), `COMPLETE` (`%value%`). If the incoming value already contains a `%`, it's used as-is.
+Strategies: `FINAL` (`value%`, default), `START` (`%value`), `COMPLETE` (`%value%`). If the incoming value already contains a `%`, it's used as-is. `setIgnoreCase(true)` matches case-insensitively (QueryDSL natively, Hefesto via a `LOWER()`-wrapped predicate).
 
 ### SearchFilter — OR search across multiple fields
 
@@ -145,7 +146,7 @@ new SearchFilter("q", "title", "description")       // custom param name
 ?search=john -> name LIKE '%john%' OR email LIKE '%john%' OR phone LIKE '%john%'
 ```
 
-No Kotlin property-reference constructor — field names are always plain strings here.
+No Kotlin property-reference constructor — field names are always plain strings here. Has the same `setIgnoreCase(true)` option as `PartialFilter`, applied to every searched field.
 
 ### EnumFilter — enum values, single or `IN`
 
@@ -154,27 +155,33 @@ EnumFilter("status", Status.class)          // ?status=ACTIVE          -> status
                                              // ?status=ACTIVE,PENDING  -> status IN (ACTIVE, PENDING)
 ```
 
-The enum class is required in the constructor. There's no Kotlin property-reference overload for `EnumFilter`.
+```kotlin
+EnumFilter(User::status, Status::class.java)   // property reference - enum class is still required
+```
+
+The enum class is always required explicitly — Kotlin can't infer it from a property reference alone.
 
 ### IntervalFilter — numeric ranges
 
 ```java
 IntervalFilter("age")
-// ?age=25    -> age = 25
-// ?age=18-65 -> age >= 18 AND age <= 65
-// ?age=18,65 -> same, comma accepted for backward compatibility
-// ?age=18-   -> age >= 18
-// ?age=-65   -> age <= 65
+// ?age=25       -> age = 25
+// ?age=18-65    -> age >= 18 AND age <= 65
+// ?age=18,65    -> same, comma accepted for backward compatibility
+// ?age=18-      -> age >= 18
+// ?age=-65      -> age <= 65 (treated as "max only" - see FILTER_API_REFERENCE.md for the negative-number caveat)
+// ?age=-10--5   -> age >= -10 AND age <= -5
 ```
 
-### InFilter — `IN` with a delimiter
+### InFilter / NotInFilter — `IN` / `NOT IN` with a delimiter
 
 ```kotlin
 InFilter("country")                          // ?country=US,CA,MX -> country IN ('US','CA','MX')
 InFilter("tags", delimiter = "|")            // ?tags=a|b|c       -> tags IN ('a','b','c')
+NotInFilter("excludedCountries", "country")  // ?excludedCountries=US,CA -> country NOT IN ('US','CA')
 ```
 
-The delimiter is fixed at construction (third constructor argument) — there's no `setDelimiter()` method.
+The delimiter is fixed at construction (third constructor argument) — there's no `setDelimiter()` method. `NotInFilter` is the exact mirror of `InFilter`.
 
 ### IsNullFilter — NULL / NOT NULL
 
@@ -206,9 +213,21 @@ LessFilter(User::age, "maxAge", orEqual = true)        // ?maxAge=65 -> age <= 6
 
 Values are auto-parsed as `Int`, `Long` (if out of `Int` range), or `Double` (if it contains a `.`); falls back to string comparison otherwise.
 
-### CustomFilter — your own logic (Hefesto module)
+### CustomFilter — your own logic
+
+```kotlin
+// Generic - works with any backend
+CustomFilter<QueryDslQueryBuilder<*>>("status") { query, value ->
+    if (value == "premium") {
+        query.where("subscription_level", BaradumOperator.GREATER, 5)
+    } else {
+        query.where("status", BaradumOperator.EQUAL, value)
+    }
+}
+```
 
 ```java
+// Hefesto-specific, slightly terser for Hefesto-only code
 new CustomFilter<>("status", (query, value) -> {
     if (value.equals("premium")) {
         query.where("subscription_level", BaradumOperator.GREATER, 5);
@@ -218,7 +237,7 @@ new CustomFilter<>("status", (query, value) -> {
 })
 ```
 
-`baradum-hefesto`'s `CustomFilter` takes a `BiConsumer<HefestoQueryBuilder<*>, String>`. It isn't part of `baradum-core` — if you're on QueryDSL, write your own `Filter<T, QueryDslQueryBuilder<*>>` subclass instead (see [Custom filters](#custom-filters)).
+`io.github.robertomike.baradum.core.filters.CustomFilter` works with any `QueryBuilder<*>` backend. `baradum-hefesto`'s own `io.github.robertomike.baradum.hefesto.filters.CustomFilter` is pre-typed to `HefestoQueryBuilder` — pick whichever fits.
 
 ### Default values and ignored values (all filters)
 
@@ -229,9 +248,9 @@ IntervalFilter("age").addIgnore("0", "null", "")  // filter is skipped if the va
 
 ## Kotlin property references
 
-Five filters accept a Kotlin property reference (`User::name`) in place of a string field name, for compile-time checking and rename-safe refactors:
+Every built-in filter except `SearchFilter` and `CustomFilter` accepts a Kotlin property reference (`User::name`) in place of a string field name, for compile-time checking and rename-safe refactors:
 
-**`ExactFilter`, `PartialFilter`, `GreaterFilter`, `LessFilter`, `DateFilter`**
+**`ExactFilter`, `PartialFilter`, `GreaterFilter`, `LessFilter`, `DateFilter`, `IntervalFilter`, `InFilter`, `NotInFilter`, `IsNullFilter`, `ComparisonFilter`, `EnumFilter`**
 
 ```kotlin
 data class User(
@@ -250,14 +269,17 @@ Baradum.make(User::class.java)
         GreaterFilter(User::age, "minAge", orEqual = true),
         LessFilter(User::age, "maxAge", orEqual = true),
         DateFilter.forLocalDateTime(User::createdAt),
+        IntervalFilter(User::age),
+        InFilter(User::status),
+        EnumFilter(User::status, Status::class.java),
     )
     .allowedSort(User::name, User::createdAt)
     .get()
 ```
 
-The remaining filters — `SearchFilter`, `EnumFilter`, `IntervalFilter`, `InFilter`, `IsNullFilter`, `ComparisonFilter`, and the Hefesto `CustomFilter` — only take plain `String` field names today.
+`SearchFilter` takes multiple field names via vararg, which doesn't map onto a single property reference, so it stays string-based. Neither `CustomFilter` accepts one either — the param is always a plain request-parameter name.
 
-Each of the five above also has factory methods, e.g. `ExactFilter.of(User::status)`, `GreaterFilter.of(User::age, orEqual = true)`.
+Every property-reference-capable filter also has factory methods, e.g. `ExactFilter.of(User::status)`, `GreaterFilter.of(User::age, orEqual = true)`, `EnumFilter.of(User::status, Status::class.java)`.
 
 ## Date filtering
 
@@ -343,7 +365,7 @@ Body shape (matches `BodyRequest` / `FilterRequest` / `OrderRequest` exactly):
 }
 ```
 
-- `operator` is one of the `BaradumOperator` values: `EQUAL`, `DIFF`, `GREATER`, `GREATER_OR_EQUAL`, `LESS`, `LESS_OR_EQUAL`, `LIKE`, `NOT_LIKE`, `IN`, `NOT_IN`, `IS_NULL`, `IS_NOT_NULL`, `BETWEEN` (defaults to `EQUAL`).
+- `operator` is one of the `BaradumOperator` values: `EQUAL`, `DIFF`, `GREATER`, `GREATER_OR_EQUAL`, `LESS`, `LESS_OR_EQUAL`, `LIKE`, `NOT_LIKE`, `LIKE_IGNORE_CASE`, `IN`, `NOT_IN`, `IS_NULL`, `IS_NOT_NULL`, `BETWEEN` (defaults to `EQUAL`). `BETWEEN` expects exactly two comma-separated values in `value` (e.g. `"25,33"`); anything else throws `FilterException`. See [FILTER_API_REFERENCE.md](FILTER_API_REFERENCE.md#the-between-operator) — no built-in filter emits `BETWEEN` directly, but it's fully supported here.
 - `type` (how this condition joins the previous one) is `AND` or `WhereOperator.OR` (defaults to `AND`).
 - `field` must match a filter's **`param`**, not its `internalName` — the request is only ever allowed to name filters you declared with `allowedFilters(...)`; anything else throws `FilterException`.
 - `subFilters` nests recursively for grouped conditions.
@@ -382,7 +404,7 @@ class RatingFilter<Q : QueryBuilder<*>>(
 }
 ```
 
-If you're on Hefesto, the ready-made `CustomFilter` avoids the subclass entirely for simple lambda logic (see [Filters](#customfilter--your-own-logic-hefesto-module) above).
+For simple lambda logic, the ready-made `CustomFilter` avoids the subclass entirely — see [Filters](#customfilter--your-own-logic) above.
 
 ## Configuration
 
@@ -397,9 +419,9 @@ Baradum.make(User::class.java)
     .get()
 ```
 
-### Static request wiring (`Baradum.request`)
+### Static request wiring (`Baradum.request`, deprecated)
 
-If you don't call `withParams(...)`, Baradum falls back to a shared static field, `Baradum.request: BasicRequest<*>?`, that you (or an auto-configuration) set once. This is what `baradum-apache-tomcat` does for you automatically on Spring Boot 3 + Hefesto: it registers `AutoConfigurationSpring3` as a Spring auto-configuration bean that receives Spring's request-scoped `HttpServletRequest` proxy and assigns it to `Baradum.request` — no extra code needed on your end, and it stays correct across concurrent requests because Spring injects a thread-aware proxy, not the request object itself.
+If you don't call `withParams(...)`, Baradum falls back to a shared static field, `Baradum.request: BasicRequest<*>?`, that you (or an auto-configuration) set once. This field is marked `@Deprecated` in favor of `withParams(...)`/`withParam(...)` above, but remains fully functional — it's still how `baradum-apache-tomcat`'s auto-configuration wires things up (see below), which is the one case where relying on it is still the sanctioned pattern. This is what `baradum-apache-tomcat` does for you automatically on Spring Boot 3 + Hefesto: it registers `AutoConfigurationSpring3` as a Spring auto-configuration bean that receives Spring's request-scoped `HttpServletRequest` proxy and assigns it to `Baradum.request` — no extra code needed on your end, and it stays correct across concurrent requests because Spring injects a thread-aware proxy, not the request object itself.
 
 For anything else — Spring Boot 2 / Tomcat 9, a non-Spring framework, or the QueryDSL module without `baradum-apache-tomcat` — implement `BasicRequest` yourself and set the field per-request:
 

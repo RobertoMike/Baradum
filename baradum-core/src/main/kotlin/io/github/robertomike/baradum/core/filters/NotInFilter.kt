@@ -6,14 +6,14 @@ import io.github.robertomike.baradum.core.interfaces.QueryBuilder
 import kotlin.reflect.KProperty1
 
 /**
- * Generic filter for IN operator with comma-separated values.
+ * Generic filter for NOT IN operator with comma-separated values.
+ * The mirror image of [InFilter].
  *
  * Usage examples:
- * - "1,2,3" - IN (1,2,3)
- * - "active,pending" - IN ('active','pending')
- * - "USA,UK,CA" - IN ('USA','UK','CA')
+ * - "1,2,3" - NOT IN (1,2,3)
+ * - "active,pending" - NOT IN ('active','pending')
  */
-open class InFilter : Filter<List<String>, QueryBuilder<*>> {
+open class NotInFilter : Filter<List<String>, QueryBuilder<*>> {
 
     private val delimiter: String
 
@@ -32,26 +32,26 @@ open class InFilter : Filter<List<String>, QueryBuilder<*>> {
 
     companion object {
         /**
-         * Factory method for creating InFilter with KProperty
+         * Factory method for creating NotInFilter with KProperty
          */
         @JvmStatic
-        fun of(property: KProperty1<*, *>): InFilter = InFilter(property)
+        fun of(property: KProperty1<*, *>): NotInFilter = NotInFilter(property)
 
         @JvmStatic
-        fun of(property: KProperty1<*, *>, param: String): InFilter = InFilter(property, param)
+        fun of(property: KProperty1<*, *>, param: String): NotInFilter = NotInFilter(property, param)
     }
 
     /**
-     * Split the value by delimiter and apply IN operator.
+     * Split the value by delimiter and apply NOT IN operator.
      */
     override fun filterByParam(query: QueryBuilder<*>, value: String) {
         val values = transform(value)
 
         if (values.isEmpty()) {
-            throw FilterException("Value list cannot be empty for IN filter '$param'")
+            throw FilterException("Value list cannot be empty for NOT IN filter '$param'")
         }
 
-        query.where(internalName, BaradumOperator.IN, values)
+        query.where(internalName, BaradumOperator.NOT_IN, values)
     }
 
     /**

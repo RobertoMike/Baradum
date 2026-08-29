@@ -413,4 +413,102 @@ class KPropertyFilterTest {
         assertEquals(1, query.whereCalls.size)
         assertEquals(LocalDateTime.of(2024, 9, 10, 8, 15, 0), query.whereCalls[0].value)
     }
+
+    @Test
+    fun `IntervalFilter with KProperty should use property name`() {
+        val filter = IntervalFilter(User::age)
+        val query = TestQueryBuilder()
+
+        filter.filterByParam(query, "18-65")
+
+        assertEquals("age", filter.param)
+        assertEquals("age", filter.internalName)
+        assertEquals(2, query.whereCalls.size)
+    }
+
+    @Test
+    fun `IntervalFilter of factory method with KProperty and custom param`() {
+        val filter = IntervalFilter.of(User::age, "ageRange")
+        assertEquals("ageRange", filter.param)
+        assertEquals("age", filter.internalName)
+    }
+
+    @Test
+    fun `InFilter with KProperty should use property name`() {
+        val filter = InFilter(User::country)
+        val query = TestQueryBuilder()
+
+        filter.filterByParam(query, "US,CA")
+
+        assertEquals("country", filter.param)
+        assertEquals("country", filter.internalName)
+        assertEquals(1, query.whereCalls.size)
+        assertEquals(BaradumOperator.IN, query.whereCalls[0].operator)
+        assertEquals(listOf("US", "CA"), query.whereCalls[0].value)
+    }
+
+    @Test
+    fun `InFilter with KProperty and custom delimiter`() {
+        val filter = InFilter(User::country, delimiter = "|")
+        val query = TestQueryBuilder()
+
+        filter.filterByParam(query, "US|CA")
+
+        assertEquals(listOf("US", "CA"), query.whereCalls[0].value)
+    }
+
+    @Test
+    fun `NotInFilter with KProperty should use property name and NOT_IN operator`() {
+        val filter = NotInFilter(User::country, "excludedCountries")
+        val query = TestQueryBuilder()
+
+        filter.filterByParam(query, "US,CA")
+
+        assertEquals("excludedCountries", filter.param)
+        assertEquals("country", filter.internalName)
+        assertEquals(1, query.whereCalls.size)
+        assertEquals(BaradumOperator.NOT_IN, query.whereCalls[0].operator)
+        assertEquals(listOf("US", "CA"), query.whereCalls[0].value)
+    }
+
+    @Test
+    fun `IsNullFilter with KProperty should use property name`() {
+        val filter = IsNullFilter(User::email)
+        val query = TestQueryBuilder()
+
+        filter.filterByParam(query, "null")
+
+        assertEquals("email", filter.param)
+        assertEquals("email", filter.internalName)
+        assertEquals(1, query.whereCalls.size)
+        assertEquals(BaradumOperator.IS_NULL, query.whereCalls[0].operator)
+    }
+
+    @Test
+    fun `IsNullFilter of factory method with KProperty`() {
+        val filter = IsNullFilter.of(User::email)
+        assertEquals("email", filter.param)
+        assertEquals("email", filter.internalName)
+    }
+
+    @Test
+    fun `PartialFilter ignoreCase emits LIKE_IGNORE_CASE operator`() {
+        val filter = PartialFilter(User::name).setIgnoreCase(true)
+        val query = TestQueryBuilder()
+
+        filter.filterByParam(query, "John")
+
+        assertEquals(1, query.whereCalls.size)
+        assertEquals(BaradumOperator.LIKE_IGNORE_CASE, query.whereCalls[0].operator)
+    }
+
+    @Test
+    fun `PartialFilter without ignoreCase still emits plain LIKE`() {
+        val filter = PartialFilter(User::name)
+        val query = TestQueryBuilder()
+
+        filter.filterByParam(query, "John")
+
+        assertEquals(BaradumOperator.LIKE, query.whereCalls[0].operator)
+    }
 }

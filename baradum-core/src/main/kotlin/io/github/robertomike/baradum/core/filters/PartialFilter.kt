@@ -45,15 +45,27 @@ open class PartialFilter : Filter<Any, QueryBuilder<*>> {
     }
 
     private var strategy: SearchLikeStrategy = SearchLikeStrategy.FINAL
+    private var ignoreCase: Boolean = false
 
     open fun setStrategy(strategy: SearchLikeStrategy): PartialFilter {
         this.strategy = strategy
         return this
     }
 
+    /**
+     * When true, matches case-insensitively (e.g. "JOHN" matches "john").
+     * Implemented via the database's own LOWER()/case-insensitive LIKE support, so the exact
+     * case-folding behavior follows the underlying column's collation.
+     */
+    open fun setIgnoreCase(ignoreCase: Boolean): PartialFilter {
+        this.ignoreCase = ignoreCase
+        return this
+    }
+
     override fun filterByParam(query: QueryBuilder<*>, value: String) {
         // If value already contains %, use it as-is; otherwise apply strategy
         val likeValue = if (value.contains("%")) value else strategy.apply(value)
-        query.where(internalName, BaradumOperator.LIKE, likeValue)
+        val operator = if (ignoreCase) BaradumOperator.LIKE_IGNORE_CASE else BaradumOperator.LIKE
+        query.where(internalName, operator, likeValue)
     }
 }

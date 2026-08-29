@@ -12,6 +12,7 @@ enum class BaradumOperator {
     LESS_OR_EQUAL,
     LIKE,
     NOT_LIKE,
+    LIKE_IGNORE_CASE,
     IN,
     NOT_IN,
     IS_NULL,

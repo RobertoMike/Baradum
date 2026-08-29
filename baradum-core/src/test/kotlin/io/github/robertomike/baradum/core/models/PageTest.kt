@@ -80,6 +80,15 @@ class PageTest {
     }
 
     @Test
+    fun `hasNext returns false with zero limit even when elements exist`() {
+        // Regression test: (currentPage + 1) * limit < totalElements used to lack the same
+        // `limit > 0` guard that totalPages/currentPage already had, so a zero-limit page with
+        // any elements at all incorrectly reported hasNext = true.
+        val page = Page(emptyList<String>(), 100, 0, 0)
+        assertFalse(page.hasNext)
+    }
+
+    @Test
     fun `hasPrevious returns true when not on first page`() {
         val page = Page(emptyList<String>(), 100, 10, 20)
         assertTrue(page.hasPrevious)

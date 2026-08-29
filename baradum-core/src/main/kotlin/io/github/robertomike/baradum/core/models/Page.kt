@@ -16,7 +16,7 @@ data class Page<T>(
         get() = if (limit > 0) offset / limit else 0
     
     val hasNext: Boolean
-        get() = (currentPage + 1) * limit < totalElements
+        get() = limit > 0 && (currentPage + 1) * limit < totalElements
     
     val hasPrevious: Boolean
         get() = currentPage > 0

@@ -5,21 +5,38 @@ All notable changes to Baradum will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [3.0.1] - 2026-08-29
+## [3.1.0] - 2026-08-29
+
+### Added
+
+- **`NotInFilter`**: the mirror image of `InFilter`, emitting `NOT_IN` instead of `IN`. Same constructors, same configurable delimiter, Kotlin property-reference support included from the start.
+- **`LIKE_IGNORE_CASE` operator** and a `setIgnoreCase(Boolean)` option on `PartialFilter` and `SearchFilter`, for case-insensitive matching. Implemented natively in QueryDSL (`Ops.LIKE_IC`); implemented in Hefesto via a raw `LOWER()`-wrapped Criteria API predicate, since Hefesto's own operator set has no case-insensitive `LIKE`.
+- **`io.github.robertomike.baradum.core.filters.CustomFilter`**: a generic, backend-agnostic lambda filter (works with any `QueryBuilder<*>`), so QueryDSL users get the same convenience `baradum-hefesto`'s `CustomFilter` already offered, without hand-rolling a `Filter` subclass.
+- **Kotlin property-reference constructors** added to `IntervalFilter`, `InFilter`, `IsNullFilter`, `ComparisonFilter`, and `EnumFilter` (enum class is still required explicitly on `EnumFilter` - it can't be inferred from a property reference). Every built-in filter except `SearchFilter` and `CustomFilter` now supports this.
+- **`HefestoBaradum`**: `io.github.robertomike.baradum.hefesto.Baradum` renamed for consistency with `QueryDslBaradum` (the two same-named `Baradum` classes across modules were an easy source of confusion). Non-breaking - the old `Baradum` object remains as a `@Deprecated` compatibility shim delegating to `HefestoBaradum`.
 
 ### Fixed
 
+- **`BaradumOperator.BETWEEN` was broken on both backends** when reached via a body-JSON filter request (`"operator": "BETWEEN"`): on Hefesto it silently fell back to `GREATER_OR_EQUAL`, dropping the upper bound and returning wrong data; on QueryDSL it always threw `IllegalArgumentException`, because `Filterable` only ever passed a single transformed value instead of the two-element list both backends expect. `Filterable` now splits `BETWEEN` values the same way it already did for `IN`/`NOT_IN`; Hefesto (which has no native `BETWEEN` operator) now builds it via a raw Criteria API `cb.between(...)` predicate instead of the broken fallback.
 - `QueryDslQueryBuilder`: values that arrive as a non-`String` (e.g. a `UUID` auto-detected by `ExactFilter`) are now coerced back to `String` in the `StringPath` equality/inequality branches, avoiding a `ClassCastException` when a `String`/`VARCHAR` column happens to hold UUID-formatted text.
 - `Baradum.make()`: fixed a missing space in the "no provider found" exception message, and simplified a redundant null/empty check.
+- `IntervalFilter`: fixed range parsing for genuinely negative bounds (e.g. `"-10--5"`, previously misread as a positive `"max = 10"` bound) and for whitespace-padded ranges (e.g. `" 18 - 65 "`).
+- `Page.hasNext`: now guards against `limit == 0` the same way `totalPages`/`currentPage` already did, so a zero-limit page no longer incorrectly reports `hasNext = true`.
+
+### Deprecated
+
+- `Baradum.request` (the static/shared request field): prefer `withParams(...)`/`withParam(...)` on the `Baradum` instance, which avoid shared mutable state. The field remains fully functional - `baradum-apache-tomcat`'s auto-configuration still uses it internally.
+- `io.github.robertomike.baradum.hefesto.Baradum`: renamed to `HefestoBaradum` (see Added, above).
 
 ### Improved
 
 - `ExactFilter`: the regex patterns used for type detection are now precompiled once instead of recompiled on every call.
 - Stopped tracking `.idea/` IDE configuration in git.
+- Added unit tests for `SearchFilter` (previously zero direct coverage) and a real-database integration test for the `BETWEEN`/`LIKE_IGNORE_CASE` Criteria API code on Hefesto.
 
 ### Documentation
 
-- Rebuilt `README.md`, `DOCUMENTATION.md`, `FILTER_API_REFERENCE.md`, `QUICK_REFERENCE.md`, and `baradum-querydsl/README.md` for accuracy against the current codebase — corrected version numbers, removed references to files that don't exist (`MIGRATION_GUIDE.md`, `TEST_SUITE_SUMMARY.md`), corrected which filters actually support Kotlin property references (only `ExactFilter`, `PartialFilter`, `GreaterFilter`, `LessFilter`, `DateFilter`), corrected the claimed Spring Boot 2/Tomcat 9 support (not present in the current `baradum-apache-tomcat` module), and fixed several non-compiling code examples.
+- Rebuilt `README.md`, `DOCUMENTATION.md`, `FILTER_API_REFERENCE.md`, `QUICK_REFERENCE.md`, and `baradum-querydsl/README.md` for accuracy against the current codebase — corrected version numbers, removed references to files that don't exist (`MIGRATION_GUIDE.md`, `TEST_SUITE_SUMMARY.md`), corrected which filters actually support Kotlin property references, corrected the claimed Spring Boot 2/Tomcat 9 support (not present in the current `baradum-apache-tomcat` module), and fixed several non-compiling code examples. Updated again for the `3.1.0` additions above.
 - Removed `ENHANCEMENT_SUMMARY.md` (a stale PR-summary document referencing a `README_NEW.md` that was never committed).
 
 ## [3.0.0] - 2025-11-10
@@ -167,7 +184,7 @@ val users = builder.get()
 - Spring Boot 3 support, wiring the Hefesto backend
 - Request parameter parsing
 - Auto-configuration support
-- **Correction (3.0.1):** this module never shipped Spring Boot 2 / Tomcat 9 support as originally stated here — there is no `AutoConfigurationSpring2` class in the codebase. Use `withParams(...)` or a custom `BasicRequest` for Spring Boot 2 or non-Spring frameworks.
+- **Correction (2026-08-29):** this module never shipped Spring Boot 2 / Tomcat 9 support as originally stated here — there is no `AutoConfigurationSpring2` class in the codebase. Use `withParams(...)` or a custom `BasicRequest` for Spring Boot 2 or non-Spring frameworks.
 
 ### 🐛 Bug Fixes
 
@@ -322,7 +339,7 @@ val users = QUser.user
 
 ---
 
-[3.0.1]: https://github.com/RobertoMike/Baradum/compare/3.0.0-all...master
+[3.1.0]: https://github.com/RobertoMike/Baradum/compare/3.0.0-all...master
 [3.0.0]: https://github.com/RobertoMike/Baradum/compare/2.1.1-baradum...3.0.0-all
 [2.1.1]: https://github.com/RobertoMike/Baradum/releases/tag/2.1.1-baradum
 [2.0.3]: https://github.com/RobertoMike/Baradum/releases/tag/2.0.3-apache-tomcat
@@ -331,7 +348,7 @@ val users = QUser.user
 <!--
 Note: this project's actual git tags never carry a "v" prefix (e.g. "3.0.0-all",
 "2.1.1-baradum") and are suffixed per-module. The links above were fixed to match
-real tags on 2026-08-29; [3.0.1] has no tag yet since that version hasn't been
+real tags on 2026-08-29; [3.1.0] has no tag yet since that version hasn't been
 released — update it to a real tag/compare once it is (see .github/workflows/maven-publish.yml
 for the "<version>-all" tagging convention that triggers a release).
 -->

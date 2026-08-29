@@ -1,5 +1,6 @@
 package io.github.robertomike.baradum.core.filters
 
+import io.github.robertomike.baradum.core.enums.BaradumOperator
 import io.github.robertomike.baradum.core.exceptions.FilterException
 import io.github.robertomike.baradum.core.interfaces.QueryBuilder
 import org.junit.jupiter.api.Assertions.*
@@ -153,7 +154,6 @@ class IntervalFilterTest {
 
     @Test
     fun `filterByParam with negative numbers in range`() {
-        // Negative ranges are tricky with hyphen delimiter, test realistic case
         filter.filterByParam(mockQueryBuilder, "0-100")
         verify(mockQueryBuilder, times(2)).where(anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull())
     }
@@ -162,5 +162,34 @@ class IntervalFilterTest {
     fun `filterByParam normalizes comma to hyphen`() {
         filter.filterByParam(mockQueryBuilder, "100,200")
         verify(mockQueryBuilder, times(2)).where(anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull())
+    }
+
+    @Test
+    fun `filterByParam with a genuinely negative range parses both bounds correctly`() {
+        // Regression test: the naive split-on-hyphen approach used to mangle this, e.g. reading
+        // "-10--5" as a single "max = 10" bound (dropping the sign and the real upper bound).
+        filter.filterByParam(mockQueryBuilder, "-10--5")
+
+        verify(mockQueryBuilder).where("age", BaradumOperator.GREATER_OR_EQUAL, "-10")
+        verify(mockQueryBuilder).where("age", BaradumOperator.LESS_OR_EQUAL, "-5")
+        verify(mockQueryBuilder, times(2)).where(anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull())
+    }
+
+    @Test
+    fun `filterByParam with a negative min and positive max`() {
+        filter.filterByParam(mockQueryBuilder, "-10-5")
+
+        verify(mockQueryBuilder).where("age", BaradumOperator.GREATER_OR_EQUAL, "-10")
+        verify(mockQueryBuilder).where("age", BaradumOperator.LESS_OR_EQUAL, "5")
+    }
+
+    @Test
+    fun `filterByParam with a bare negative number is treated as max-only, for backward compatibility`() {
+        // This ambiguity (is "-65" an exact -65, or "up to 65"?) is inherent to the dash syntax -
+        // documented behavior, not something this fix changes.
+        filter.filterByParam(mockQueryBuilder, "-65")
+
+        verify(mockQueryBuilder).where("age", BaradumOperator.LESS_OR_EQUAL, "65")
+        verify(mockQueryBuilder, times(1)).where(anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull())
     }
 }

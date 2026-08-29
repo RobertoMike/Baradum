@@ -17,6 +17,7 @@ object OperatorConverter {
             BaradumOperator.LESS_OR_EQUAL -> Ops.LOE
             BaradumOperator.LIKE -> Ops.LIKE
             BaradumOperator.NOT_LIKE -> Ops.LIKE // Will be negated
+            BaradumOperator.LIKE_IGNORE_CASE -> Ops.LIKE_IC
             BaradumOperator.IN -> Ops.IN
             BaradumOperator.NOT_IN -> Ops.NOT_IN
             BaradumOperator.IS_NULL -> Ops.IS_NULL
@@ -34,6 +35,7 @@ object OperatorConverter {
             Ops.LT -> BaradumOperator.LESS
             Ops.LOE -> BaradumOperator.LESS_OR_EQUAL
             Ops.LIKE -> BaradumOperator.LIKE
+            Ops.LIKE_IC -> BaradumOperator.LIKE_IGNORE_CASE
             Ops.IN -> BaradumOperator.IN
             Ops.NOT_IN -> BaradumOperator.NOT_IN
             Ops.IS_NULL -> BaradumOperator.IS_NULL

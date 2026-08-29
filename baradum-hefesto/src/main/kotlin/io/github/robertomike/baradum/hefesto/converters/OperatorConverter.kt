@@ -1,6 +1,7 @@
 package io.github.robertomike.baradum.hefesto.converters
 
 import io.github.robertomike.baradum.core.enums.BaradumOperator
+import io.github.robertomike.baradum.core.exceptions.BaradumException
 import io.github.robertomike.hefesto.enums.Operator
 
 object OperatorConverter {
@@ -18,7 +19,14 @@ object OperatorConverter {
             BaradumOperator.NOT_IN -> Operator.NOT_IN
             BaradumOperator.IS_NULL -> Operator.IS_NULL
             BaradumOperator.IS_NOT_NULL -> Operator.IS_NOT_NULL
-            BaradumOperator.BETWEEN -> Operator.GREATER_OR_EQUAL // Fallback - BETWEEN might not exist in Hefesto 3
+            // Hefesto's own Operator enum has neither of these - HefestoQueryBuilder.where()
+            // special-cases both before ever calling this converter (via whereCustom/orWhereCustom
+            // + raw CriteriaBuilder predicates). Reaching here means that special-casing was
+            // bypassed somehow, so fail loudly instead of silently building the wrong query
+            // (this used to fall back to GREATER_OR_EQUAL for BETWEEN, silently dropping the
+            // upper bound).
+            BaradumOperator.BETWEEN -> throw BaradumException("BETWEEN is not a native Hefesto operator and must be handled by HefestoQueryBuilder before reaching OperatorConverter")
+            BaradumOperator.LIKE_IGNORE_CASE -> throw BaradumException("LIKE_IGNORE_CASE is not a native Hefesto operator and must be handled by HefestoQueryBuilder before reaching OperatorConverter")
         }
     }
 

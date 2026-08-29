@@ -112,17 +112,18 @@ fun getUsers(): List<User> =
 | `ExactFilter` | `?status=ACTIVE` | `status = 'ACTIVE'` | ✅ |
 | `PartialFilter` | `?name=john` | `name LIKE 'john%'` | ✅ |
 | `SearchFilter` | `?search=john` | `name LIKE '%john%' OR email LIKE '%john%'` | ❌ |
-| `EnumFilter` | `?status=ACTIVE,PENDING` | `status IN ('ACTIVE','PENDING')` | ❌ |
-| `IntervalFilter` | `?age=18-65` | `age >= 18 AND age <= 65` | ❌ |
-| `InFilter` | `?country=US,CA,MX` | `country IN ('US','CA','MX')` | ❌ |
-| `IsNullFilter` | `?deletedAt=null` | `deletedAt IS NULL` | ❌ |
-| `ComparisonFilter` | `?price=>100` | `price > 100` | ❌ |
+| `EnumFilter` | `?status=ACTIVE,PENDING` | `status IN ('ACTIVE','PENDING')` | ✅ |
+| `IntervalFilter` | `?age=18-65` | `age >= 18 AND age <= 65` | ✅ |
+| `InFilter` | `?country=US,CA,MX` | `country IN ('US','CA','MX')` | ✅ |
+| `NotInFilter` | `?excluded=US,CA` | `country NOT IN ('US','CA')` | ✅ |
+| `IsNullFilter` | `?deletedAt=null` | `deletedAt IS NULL` | ✅ |
+| `ComparisonFilter` | `?price=>100` | `price > 100` | ✅ |
 | `GreaterFilter` | `?age=18` | `age > 18` (or `>=` with `orEqual=true`) | ✅ |
 | `LessFilter` | `?age=65` | `age < 65` (or `<=` with `orEqual=true`) | ✅ |
 | `DateFilter` | `?date=>2024-01-01` | `date > '2024-01-01'` | ✅ |
-| `CustomFilter` *(Hefesto module)* | any | your own lambda | ❌ |
+| `CustomFilter` | any | your own lambda | ❌ |
 
-"Kotlin property support" means the filter has a constructor that takes a property reference directly, e.g. `ExactFilter(User::status)`, for compile-time-checked field names. Filters marked ❌ only accept plain strings (`EnumFilter("status", Status::class.java)`) today.
+"Kotlin property support" means the filter has a constructor that takes a property reference directly, e.g. `ExactFilter(User::status)`, for compile-time-checked field names. Only `SearchFilter` (multiple field names via vararg) and `CustomFilter` (always a plain param name) lack one. `PartialFilter` and `SearchFilter` also support `.setIgnoreCase(true)` for case-insensitive matching.
 
 Full constructors, options, and edge cases for every filter: **[FILTER_API_REFERENCE.md](FILTER_API_REFERENCE.md)**.
 
