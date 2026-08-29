@@ -201,7 +201,9 @@ class QueryDslQueryBuilder<T>(
     @Suppress("UNCHECKED_CAST")
     private fun createEqualPredicate(path: Path<*>, value: Any?): Predicate {
         return when (path) {
-            is StringPath -> path.eq(value as String?)
+            // value may arrive as a non-String (e.g. UUID) when a filter auto-detects a UUID-shaped
+            // string; coerce it back to String for actual String/VARCHAR columns instead of a ClassCastException.
+            is StringPath -> path.eq(value?.toString())
             is NumberPath<*> -> (path as NumberPath<Comparable<Any>>).eq(value as Comparable<Any>?)
             is BooleanPath -> path.eq(value as Boolean?)
             is DatePath<*> -> (path as DatePath<Comparable<Any>>).eq(value as Comparable<Any>?)
@@ -214,7 +216,7 @@ class QueryDslQueryBuilder<T>(
     @Suppress("UNCHECKED_CAST")
     private fun createNotEqualPredicate(path: Path<*>, value: Any?): Predicate {
         return when (path) {
-            is StringPath -> path.ne(value as String?)
+            is StringPath -> path.ne(value?.toString())
             is NumberPath<*> -> (path as NumberPath<Comparable<Any>>).ne(value as Comparable<Any>?)
             is BooleanPath -> path.ne(value as Boolean?)
             is DatePath<*> -> (path as DatePath<Comparable<Any>>).ne(value as Comparable<Any>?)

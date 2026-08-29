@@ -43,6 +43,11 @@ open class ExactFilter : Filter<Any, QueryBuilder<*>> {
 
         @JvmStatic
         fun of(property: KProperty1<*, *>, param: String): ExactFilter = ExactFilter(property, param)
+
+        // Precompiled once and reused across all filterByParam calls instead of recompiling per request.
+        private val INTEGER_PATTERN = Regex("^-?\\d+$")
+        private val DECIMAL_PATTERN = Regex("^-?\\d+\\.\\d+$")
+        private val UUID_PATTERN = Regex("[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")
     }
 
     override fun filterByParam(query: QueryBuilder<*>, value: String) {
@@ -51,10 +56,10 @@ open class ExactFilter : Filter<Any, QueryBuilder<*>> {
             value.equals("true", ignoreCase = true) -> true
             value.equals("false", ignoreCase = true) -> false
             // Only convert if it's clearly a number (no letters)
-            value.matches(Regex("^-?\\d+$")) && value.length < 10 -> value.toInt()
-            value.matches(Regex("^-?\\d+$")) -> value.toLong()
-            value.matches(Regex("^-?\\d+\\.\\d+$")) -> value.toDouble()
-            value.matches(Regex("[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")) -> UUID.fromString(value)
+            value.matches(INTEGER_PATTERN) && value.length < 10 -> value.toInt()
+            value.matches(INTEGER_PATTERN) -> value.toLong()
+            value.matches(DECIMAL_PATTERN) -> value.toDouble()
+            value.matches(UUID_PATTERN) -> UUID.fromString(value)
             else -> value // Keep as string - ORM will handle enum conversion
         }
         query.where(internalName, BaradumOperator.EQUAL, convertedValue)
