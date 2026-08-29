@@ -322,8 +322,16 @@ val users = QUser.user
 
 ---
 
-[3.0.1]: https://github.com/RobertoMike/Baradum/compare/v3.0.0...v3.0.1
-[3.0.0]: https://github.com/RobertoMike/Baradum/compare/v2.1.1...v3.0.0
-[2.1.1]: https://github.com/RobertoMike/Baradum/releases/tag/v2.1.1
-[2.0.3]: https://github.com/RobertoMike/Baradum/releases/tag/v2.0.3
-[1.0.1]: https://github.com/RobertoMike/Baradum/releases/tag/v1.0.1
+[3.0.1]: https://github.com/RobertoMike/Baradum/compare/3.0.0-all...master
+[3.0.0]: https://github.com/RobertoMike/Baradum/compare/2.1.1-baradum...3.0.0-all
+[2.1.1]: https://github.com/RobertoMike/Baradum/releases/tag/2.1.1-baradum
+[2.0.3]: https://github.com/RobertoMike/Baradum/releases/tag/2.0.3-apache-tomcat
+[1.0.1]: https://github.com/RobertoMike/Baradum/releases/tag/1.0.1-apache-tomcat
+
+<!--
+Note: this project's actual git tags never carry a "v" prefix (e.g. "3.0.0-all",
+"2.1.1-baradum") and are suffixed per-module. The links above were fixed to match
+real tags on 2026-08-29; [3.0.1] has no tag yet since that version hasn't been
+released — update it to a real tag/compare once it is (see .github/workflows/maven-publish.yml
+for the "<version>-all" tagging convention that triggers a release).
+-->
