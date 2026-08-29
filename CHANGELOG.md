@@ -5,6 +5,23 @@ All notable changes to Baradum will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.1] - 2026-08-29
+
+### Fixed
+
+- `QueryDslQueryBuilder`: values that arrive as a non-`String` (e.g. a `UUID` auto-detected by `ExactFilter`) are now coerced back to `String` in the `StringPath` equality/inequality branches, avoiding a `ClassCastException` when a `String`/`VARCHAR` column happens to hold UUID-formatted text.
+- `Baradum.make()`: fixed a missing space in the "no provider found" exception message, and simplified a redundant null/empty check.
+
+### Improved
+
+- `ExactFilter`: the regex patterns used for type detection are now precompiled once instead of recompiled on every call.
+- Stopped tracking `.idea/` IDE configuration in git.
+
+### Documentation
+
+- Rebuilt `README.md`, `DOCUMENTATION.md`, `FILTER_API_REFERENCE.md`, `QUICK_REFERENCE.md`, and `baradum-querydsl/README.md` for accuracy against the current codebase — corrected version numbers, removed references to files that don't exist (`MIGRATION_GUIDE.md`, `TEST_SUITE_SUMMARY.md`), corrected which filters actually support Kotlin property references (only `ExactFilter`, `PartialFilter`, `GreaterFilter`, `LessFilter`, `DateFilter`), corrected the claimed Spring Boot 2/Tomcat 9 support (not present in the current `baradum-apache-tomcat` module), and fixed several non-compiling code examples.
+- Removed `ENHANCEMENT_SUMMARY.md` (a stale PR-summary document referencing a `README_NEW.md` that was never committed).
+
 ## [3.0.0] - 2025-11-10
 
 ### 🎉 Major Release - Modular Architecture & QueryDSL Support
@@ -147,9 +164,10 @@ val users = builder.get()
 
 #### baradum-apache-tomcat (3.0.0)
 - Apache Tomcat 10.1.11 (Jakarta)
-- Spring Boot 2 & 3 support
+- Spring Boot 3 support, wiring the Hefesto backend
 - Request parameter parsing
 - Auto-configuration support
+- **Correction (3.0.1):** this module never shipped Spring Boot 2 / Tomcat 9 support as originally stated here — there is no `AutoConfigurationSpring2` class in the codebase. Use `withParams(...)` or a custom `BasicRequest` for Spring Boot 2 or non-Spring frameworks.
 
 ### 🐛 Bug Fixes
 
@@ -304,6 +322,7 @@ val users = QUser.user
 
 ---
 
+[3.0.1]: https://github.com/RobertoMike/Baradum/compare/v3.0.0...v3.0.1
 [3.0.0]: https://github.com/RobertoMike/Baradum/compare/v2.1.1...v3.0.0
 [2.1.1]: https://github.com/RobertoMike/Baradum/releases/tag/v2.1.1
 [2.0.3]: https://github.com/RobertoMike/Baradum/releases/tag/v2.0.3

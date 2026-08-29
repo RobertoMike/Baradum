@@ -1,84 +1,78 @@
-# Baradum - Dynamic Filtering and Sorting for Java/Kotlin
+# Baradum — Complete Guide
 
-[![Maven Central](https://img.shields.io/maven-central/v/io.github.robertomike/baradum.svg)](https://search.maven.org/artifact/io.github.robertomike/baradum)
-[![License](https://img.shields.io/github/license/RobertoMike/Baradum)](LICENSE.txt)
+This is the full user guide for Baradum. For a quick pitch and install snippet, see [README.md](README.md). For exhaustive per-filter constructor signatures, see [FILTER_API_REFERENCE.md](FILTER_API_REFERENCE.md).
 
-Baradum is a powerful library that simplifies filtering and sorting in your Java/Kotlin applications. It allows you to dynamically filter and sort database queries using URL parameters or request body, eliminating the need for complex conditional logic.
-
-## 🚀 Key Features
-
-- **Dynamic Filtering**: Filter data using URL parameters or JSON body without writing repetitive if-else conditions
-- **Type-Safe Kotlin API**: Use Kotlin property references (`User::name`) for compile-time safety
-- **Extensive Filter Types**: 15+ built-in filters for common use cases
-- **Flexible Date Handling**: Support for LocalDate, LocalDateTime, java.util.Date, and SQL date types
-- **Custom Patterns**: Configure date patterns and filter behaviors per instance
-- **Smart Type Conversion**: Automatic conversion of string values to appropriate types
-- **Spring Boot Integration**: Zero-configuration setup for Spring Boot 2 & 3
-- **Builder Patterns**: Fluent APIs for complex filter configurations
-
-## 📋 Table of Contents
+## Table of Contents
 
 - [Installation](#installation)
-- [Quick Start](#quick-start)
-- [Filter Types Reference](#filter-types-reference)
-- [Kotlin Property References (Type-Safe API)](#kotlin-property-references-type-safe-api)
-- [Date Filtering](#date-filtering)
-- [Comparison Filters](#comparison-filters)
+- [Choosing a backend](#choosing-a-backend)
+- [Quick start](#quick-start)
+- [Filters](#filters)
+- [Kotlin property references](#kotlin-property-references)
+- [Date filtering](#date-filtering)
 - [Sorting](#sorting)
-- [Body-Based Filtering](#body-based-filtering)
-- [Custom Filters](#custom-filters)
+- [Body-based filtering](#body-based-filtering)
+- [Pagination and results](#pagination-and-results)
+- [Custom filters](#custom-filters)
 - [Configuration](#configuration)
-- [Advanced Examples](#advanced-examples)
-- [Migration Guide](#migration-guide)
+- [Known limitations](#known-limitations)
 
-## 📦 Installation
+## Installation
 
-### Maven
+Current version: **3.0.1**. Pick one query backend module:
+
+```kotlin
+dependencies {
+    // Hefesto (Hibernate/HefestoSQL)
+    implementation("io.github.robertomike:baradum-hefesto:3.0.1")
+
+    // OR QueryDSL (type-safe, requires generated Q-classes)
+    implementation("io.github.robertomike:baradum-querydsl:3.0.1")
+
+    // Optional: auto-wires the current HttpServletRequest for Spring Boot 3 + Hefesto
+    implementation("io.github.robertomike:baradum-apache-tomcat:3.0.1")
+}
+```
 
 ```xml
-<!-- Hefesto (Hibernate/HefestoSQL) -->
 <dependency>
     <groupId>io.github.robertomike</groupId>
     <artifactId>baradum-hefesto</artifactId>
-    <version>3.0.0</version>
-</dependency>
-
-<!-- OR QueryDSL (Type-safe queries) -->
-<dependency>
-    <groupId>io.github.robertomike</groupId>
-    <artifactId>baradum-querydsl</artifactId>
-    <version>3.0.0</version>
+    <version>3.0.1</version>
 </dependency>
 ```
 
-### Gradle
+`baradum-core` is a transitive dependency of both backends — you don't add it directly.
 
-```gradle
-dependencies {
-    // Hefesto (Hibernate/HefestoSQL)
-    implementation 'io.github.robertomike:baradum-hefesto:3.0.0'
-    
-    // OR QueryDSL (Type-safe queries)
-    implementation 'io.github.robertomike:baradum-querydsl:3.0.0'
-}
+## Choosing a backend
+
+Baradum's core module has no idea how to talk to a database; it only knows how to turn filters into calls on a `QueryBuilder<T>`. Each backend module supplies that implementation, and each ships its **own** factory:
+
+| | Hefesto | QueryDSL |
+|---|---|---|
+| Entry point | `io.github.robertomike.baradum.hefesto.Baradum.make(User::class.java)` | `QueryDslBaradum.make(QUser.user, entityManager)` or `QUser.user.baradum(entityManager)` |
+| Requires | Your entity extends Hefesto's `BaseModel` | A generated Q-class for the entity (QueryDSL APT) |
+| Custom lambda filter | `io.github.robertomike.baradum.hefesto.filters.CustomFilter` | write a `Filter<T, QueryDslQueryBuilder<*>>` subclass |
+
+> **Watch the imports.** There are two different classes named `Baradum` in this library: `io.github.robertomike.baradum.core.Baradum` (the generic one, shown below) and `io.github.robertomike.baradum.hefesto.Baradum` (a typed Hefesto-only shortcut). Both expose `.make(...)`, but they resolve the query backend differently — see below. QueryDSL has no such shortcut class; always go through `QueryDslBaradum` or the `EntityPathBase` extension functions.
+
+There's also a generic, backend-agnostic factory on the **core** `Baradum` class:
+
+```kotlin
+import io.github.robertomike.baradum.core.Baradum
+
+Baradum.make(User::class.java) // resolves a backend via ServiceLoader
 ```
 
-### Spring Boot Integration
+This uses Java's `ServiceLoader` to find whichever `QueryBuilderProvider` is on your classpath and `supports()` your model class. Today, **only `baradum-hefesto` registers a provider** (it requires your model to extend Hefesto's `BaseModel`); `baradum-querydsl` has no `ServiceLoader` provider because a QueryDSL query builder also needs a Q-class and an `EntityManager`/`JPAQueryFactory`, which a bare `Class<T>` can't supply. Practically:
 
-For Spring Boot 3 with Apache Tomcat:
+- **Hefesto users** can use either `io.github.robertomike.baradum.core.Baradum.make(User::class.java)` or `io.github.robertomike.baradum.hefesto.Baradum.make(User::class.java)` — same result, the hefesto-package one just skips the `ServiceLoader` lookup.
+- **QueryDSL users** must always use `QueryDslBaradum.make(...)` or the `.baradum(...)` extension function.
 
-```gradle
-dependencies {
-    // Spring Boot 3 (Jakarta)
-    implementation 'io.github.robertomike:baradum-apache-tomcat:3.0.0'
-}
-```
-
-## 🎯 Quick Start
-
-### Basic Example
+## Quick start
 
 **Without Baradum:**
+
 ```java
 @GetMapping("/users")
 public List<User> getUsers(
@@ -87,16 +81,15 @@ public List<User> getUsers(
     @RequestParam(required = false) Integer maxAge
 ) {
     if (categoryId != null && minAge != null && maxAge != null) {
-        return repository.findByCategoryIdAndAgeGreaterThanEqualAndAgeLessThanEqual(
-            categoryId, minAge, maxAge
-        );
+        return repository.findByCategoryIdAndAgeGreaterThanEqualAndAgeLessThanEqual(categoryId, minAge, maxAge);
     }
-    // ... 6 more conditional branches
+    // ... every other combination
     return repository.findAll();
 }
 ```
 
 **With Baradum:**
+
 ```java
 @GetMapping("/users")
 public List<User> getUsers() {
@@ -107,270 +100,138 @@ public List<User> getUsers() {
 }
 ```
 
-### Kotlin with Property References
-
 ```kotlin
 @GetMapping("/users")
-fun getUsers(): List<User> {
-    return Baradum.make(User::class.java)
-        .allowedFilters(ExactFilter(User::categoryId))
-        .allowedFilters(IntervalFilter(User::age))
+fun getUsers(): List<User> =
+    Baradum.make(User::class.java)
+        .allowedFilters(ExactFilter(User::categoryId), IntervalFilter(User::age))
+        .allowedSort(User::name, User::createdAt)
         .get()
-}
 ```
 
-**URL Examples:**
-- `?categoryId=2` → Filters by `categoryId = 2`
-- `?age=18-65` → Filters by `age >= 18 AND age <= 65`
-- `?categoryId=2&age=18-65` → Both filters applied
+`allowedFilters("categoryId")` is shorthand: a bare string is turned into an `ExactFilter` for that field. Anything more specific (ranges, LIKE, enums, dates...) needs an explicit filter instance.
 
-## 📖 Filter Types Reference
+## Filters
 
-### Core Filters
+Every filter is a small class that reads one request parameter and translates it into a `where(...)` call. Below is a practical overview of each; see [FILTER_API_REFERENCE.md](FILTER_API_REFERENCE.md) for every constructor and edge case.
 
-#### ExactFilter
-Exact value matching with automatic type conversion.
+### ExactFilter — exact match, auto type conversion
+
+```kotlin
+ExactFilter(User::status)              // ?status=ACTIVE  -> status = 'ACTIVE'
+ExactFilter(User::isActive)            // ?isActive=true  -> isActive = true (Boolean)
+ExactFilter("userId", "user_id")       // ?userId=123     -> user_id = 123
+```
+
+Automatically converts `"true"`/`"false"` to `Boolean`, digit strings to `Int`/`Long`, and decimal strings to `Double`; anything else is passed through as a `String` (the ORM/DB layer handles enum columns).
+
+### PartialFilter — LIKE search
+
+```kotlin
+PartialFilter(User::username)                                   // ?username=john -> LIKE 'john%'
+PartialFilter(User::email, "search").setStrategy(SearchLikeStrategy.COMPLETE) // -> LIKE '%john%'
+```
+
+Strategies: `FINAL` (`value%`, default), `START` (`%value`), `COMPLETE` (`%value%`). If the incoming value already contains a `%`, it's used as-is.
+
+### SearchFilter — OR search across multiple fields
 
 ```java
-// Traditional
-ExactFilter("status")
-
-// Kotlin property reference
-ExactFilter(User::status)
-ExactFilter(User::email, "userEmail")  // Custom param name
+SearchFilter.of("name", "email", "phone")           // param defaults to "search"
+new SearchFilter("q", "title", "description")       // custom param name
 ```
 
-**Examples:**
-- `?status=ACTIVE` → `status = 'ACTIVE'`
-- `?isActive=true` → `isActive = true` (boolean conversion)
-- `?age=25` → `age = 25` (numeric conversion)
+```
+?search=john -> name LIKE '%john%' OR email LIKE '%john%' OR phone LIKE '%john%'
+```
 
-#### PartialFilter
-LIKE filtering with wildcard strategies.
+No Kotlin property-reference constructor — field names are always plain strings here.
+
+### EnumFilter — enum values, single or `IN`
 
 ```java
-// Default FINAL strategy (value%)
-PartialFilter("username")
-
-// Custom strategy
-PartialFilter("email").setStrategy(SearchLikeStrategy.COMPLETE)
-
-// Kotlin
-PartialFilter(User::username)
-PartialFilter(User::email, "search").setStrategy(SearchLikeStrategy.COMPLETE)
+EnumFilter("status", Status.class)          // ?status=ACTIVE          -> status = ACTIVE
+                                             // ?status=ACTIVE,PENDING  -> status IN (ACTIVE, PENDING)
 ```
 
-**Strategies:**
-- `FINAL`: `value%` (default)
-- `INITIAL`: `%value`
-- `COMPLETE`: `%value%`
+The enum class is required in the constructor. There's no Kotlin property-reference overload for `EnumFilter`.
 
-**Examples:**
-- `?username=john` → `username LIKE 'john%'`
-- User-provided wildcards: `?username=%JOHN%` → Used as-is
-
-#### SearchFilter
-Multi-field OR search.
-
-```java
-// Traditional
-SearchFilter.of("name", "email", "phone")
-
-// Kotlin
-SearchFilter.of(User::name, User::email, User::phone)
-```
-
-**Example:**
-- `?search=john` → `name LIKE '%john%' OR email LIKE '%john%' OR phone LIKE '%john%'`
-
-#### EnumFilter
-Enum value filtering with IN operator support.
-
-```java
-// Single value
-EnumFilter("status", Status.class)
-
-// Kotlin
-EnumFilter(User::status, Status::class.java)
-```
-
-**Examples:**
-- `?status=ACTIVE` → `status = 'ACTIVE'`
-- `?status=ACTIVE,PENDING` → `status IN ('ACTIVE', 'PENDING')`
-
-#### IntervalFilter
-Numeric range filtering.
+### IntervalFilter — numeric ranges
 
 ```java
 IntervalFilter("age")
-IntervalFilter(User::age)
+// ?age=25    -> age = 25
+// ?age=18-65 -> age >= 18 AND age <= 65
+// ?age=18,65 -> same, comma accepted for backward compatibility
+// ?age=18-   -> age >= 18
+// ?age=-65   -> age <= 65
 ```
 
-**Examples:**
-- `?age=25` → `age = 25`
-- `?age=18-65` → `age >= 18 AND age <= 65`
-- `?age=18,65` → Same as above (backward compatibility)
-- `?age=18-` → `age >= 18`
-- `?age=-65` → `age <= 65`
+### InFilter — `IN` with a delimiter
 
-#### ComparisonFilter
-Supports comparison operators with prefix notation.
-
-```java
-ComparisonFilter("price")
-ComparisonFilter(User::salary)
+```kotlin
+InFilter("country")                          // ?country=US,CA,MX -> country IN ('US','CA','MX')
+InFilter("tags", delimiter = "|")            // ?tags=a|b|c       -> tags IN ('a','b','c')
 ```
 
-**Examples:**
-- `?price=>100` → `price > 100`
-- `?price=>=50` → `price >= 50`
-- `?price=<1000` → `price < 1000`
-- `?price=<=500` → `price <= 500`
-- `?price=!=0` → `price != 0`
+The delimiter is fixed at construction (third constructor argument) — there's no `setDelimiter()` method.
 
-#### InFilter
-IN operator with comma-separated values.
-
-```java
-InFilter("country")
-InFilter(User::country, "countries")
-```
-
-**Example:**
-- `?country=US,CA,MX` → `country IN ('US', 'CA', 'MX')`
-
-#### IsNullFilter
-NULL/NOT NULL checks.
+### IsNullFilter — NULL / NOT NULL
 
 ```java
 IsNullFilter("deletedAt")
-IsNullFilter(User::deletedAt)
+// ?deletedAt=null, true, 1, yes         -> IS NULL
+// ?deletedAt=not_null, false, 0, no     -> IS NOT NULL
 ```
 
-**Examples:**
-- `?deletedAt=null` → `deletedAt IS NULL`
-- `?deletedAt=not_null` → `deletedAt IS NOT NULL`
-- Accepts: `true/false`, `1/0`, `yes/no`, `null/not_null`
-
-### Comparison Filters
-
-#### GreaterFilter
-Greater than comparisons.
+### ComparisonFilter — one param, any prefix operator
 
 ```java
-// Strictly greater than (>)
-GreaterFilter("age")
-GreaterFilter(User::age)
-
-// Greater than or equal (>=)
-GreaterFilter("age", true)
-GreaterFilter(User::age, "minAge", true)
-
-// Kotlin
-GreaterFilter.of(User::age, orEqual = true)
+ComparisonFilter("price")
+// ?price=>100   -> price > 100
+// ?price=>=50   -> price >= 50
+// ?price=<1000  -> price < 1000
+// ?price=<=500  -> price <= 500
+// ?price=!=0    -> price != 0
+// ?price=100    -> price = 100 (no prefix)
 ```
 
-**Examples:**
-- `?age=18` with `orEqual=false` → `age > 18`
-- `?age=18` with `orEqual=true` → `age >= 18`
-
-#### LessFilter
-Less than comparisons.
-
-```java
-// Strictly less than (<)
-LessFilter("age")
-LessFilter(User::age)
-
-// Less than or equal (<=)
-LessFilter("age", true)
-LessFilter(User::age, "maxAge", true)
-
-// Kotlin
-LessFilter.of(User::age, orEqual = true)
-```
-
-**Examples:**
-- `?age=65` with `orEqual=false` → `age < 65`
-- `?age=65` with `orEqual=true` → `age <= 65`
-
-## 🔍 Date Filtering
-
-### DateFilter with Configurable Types
-
-DateFilter now supports multiple date types and custom patterns:
-
-```java
-// Simple LocalDate (default)
-DateFilter("createdAt")
-
-// LocalDateTime with custom pattern
-DateFilter.forLocalDateTime("updatedAt", "dd/MM/yyyy HH:mm:ss")
-
-// java.util.Date
-DateFilter.forUtilDate("birthDate", "MM-dd-yyyy")
-
-// SQL Date
-DateFilter.forSqlDate("startDate")
-
-// SQL Timestamp
-DateFilter.forSqlTimestamp("eventTime", "yyyy-MM-dd HH:mm:ss")
-
-// Builder pattern
-DateFilter.builder("eventDate")
-    .useLocalDate()
-    .withPattern("yyyy/MM/dd")
-    .build()
-
-// Kotlin with property references
-DateFilter.forLocalDate(Event::createdAt)
-DateFilter.forUtilDate(User::birthDate, "MM-dd-yyyy")
-```
-
-### Supported Date Types
-
-| Type | Description | Default Pattern |
-|------|-------------|-----------------|
-| `LOCAL_DATE` | java.time.LocalDate | yyyy-MM-dd |
-| `LOCAL_DATE_TIME` | java.time.LocalDateTime | yyyy-MM-dd'T'HH:mm:ss |
-| `UTIL_DATE` | java.util.Date | yyyy-MM-dd |
-| `SQL_DATE` | java.sql.Date | yyyy-MM-dd |
-| `SQL_TIMESTAMP` | java.sql.Timestamp | yyyy-MM-dd HH:mm:ss |
-
-### Date Filtering Examples
-
-```java
-DateFilter("createdAt")
-```
-
-**Range with pipe:**
-- `?createdAt=2024-01-01|2024-12-31` → `createdAt >= '2024-01-01' AND createdAt <= '2024-12-31'`
-
-**Comparison operators:**
-- `?createdAt=>2024-01-01` → `createdAt > '2024-01-01'`
-- `?createdAt=>=2024-01-01` → `createdAt >= '2024-01-01'`
-- `?createdAt=<2024-12-31` → `createdAt < '2024-12-31'`
-- `?createdAt=<=2024-12-31` → `createdAt <= '2024-12-31'`
-- `?createdAt=<>2024-06-15` → `createdAt != '2024-06-15'`
-
-**Single date:**
-- `?createdAt=2024-01-01` → `createdAt = '2024-01-01'`
-
-## 🎭 Kotlin Property References (Type-Safe API)
-
-All filters support Kotlin property references for compile-time safety:
-
-### Base Constructor
+### GreaterFilter / LessFilter — dedicated single-direction comparisons
 
 ```kotlin
-// Property reference uses property name for both param and internalName
-Filter(User::name)
-
-// Custom param name, property name for internal field
-Filter(User::email, "searchEmail")
+GreaterFilter(User::age)                              // ?age=18 -> age > 18
+GreaterFilter(User::age, "minAge", orEqual = true)     // ?minAge=18 -> age >= 18
+LessFilter(User::age, "maxAge", orEqual = true)        // ?maxAge=65 -> age <= 65
 ```
 
-### Complete Example
+Values are auto-parsed as `Int`, `Long` (if out of `Int` range), or `Double` (if it contains a `.`); falls back to string comparison otherwise.
+
+### CustomFilter — your own logic (Hefesto module)
+
+```java
+new CustomFilter<>("status", (query, value) -> {
+    if (value.equals("premium")) {
+        query.where("subscription_level", BaradumOperator.GREATER, 5);
+    } else {
+        query.where("status", BaradumOperator.EQUAL, value);
+    }
+})
+```
+
+`baradum-hefesto`'s `CustomFilter` takes a `BiConsumer<HefestoQueryBuilder<*>, String>`. It isn't part of `baradum-core` — if you're on QueryDSL, write your own `Filter<T, QueryDslQueryBuilder<*>>` subclass instead (see [Custom filters](#custom-filters)).
+
+### Default values and ignored values (all filters)
+
+```java
+ExactFilter("status").setDefaultValue("ACTIVE")   // used when ?status is absent
+IntervalFilter("age").addIgnore("0", "null", "")  // filter is skipped if the value matches one of these
+```
+
+## Kotlin property references
+
+Five filters accept a Kotlin property reference (`User::name`) in place of a string field name, for compile-time checking and rename-safe refactors:
+
+**`ExactFilter`, `PartialFilter`, `GreaterFilter`, `LessFilter`, `DateFilter`**
 
 ```kotlin
 data class User(
@@ -382,51 +243,61 @@ data class User(
     val createdAt: LocalDateTime
 )
 
-@GetMapping("/users")
-fun getUsers(): List<User> {
-    return Baradum.make(User::class.java)
-        .allowedFilters(
-            ExactFilter(User::id),
-            PartialFilter(User::name, "search"),
-            PartialFilter(User::email, "search"),
-            EnumFilter(User::status, Status::class.java),
-            IntervalFilter(User::age),
-            DateFilter.forLocalDateTime(User::createdAt),
-            GreaterFilter(User::age, "minAge", orEqual = true),
-            LessFilter(User::age, "maxAge", orEqual = true)
-        )
-        .allowedSort(User::name, User::createdAt)
-        .page()
-}
+Baradum.make(User::class.java)
+    .allowedFilters(
+        ExactFilter(User::id),
+        PartialFilter(User::name, "search"),
+        GreaterFilter(User::age, "minAge", orEqual = true),
+        LessFilter(User::age, "maxAge", orEqual = true),
+        DateFilter.forLocalDateTime(User::createdAt),
+    )
+    .allowedSort(User::name, User::createdAt)
+    .get()
 ```
 
-### Factory Methods
+The remaining filters — `SearchFilter`, `EnumFilter`, `IntervalFilter`, `InFilter`, `IsNullFilter`, `ComparisonFilter`, and the Hefesto `CustomFilter` — only take plain `String` field names today.
+
+Each of the five above also has factory methods, e.g. `ExactFilter.of(User::status)`, `GreaterFilter.of(User::age, orEqual = true)`.
+
+## Date filtering
+
+`DateFilter` supports five date/time types, each with its own default pattern:
+
+| Type | Java type | Default pattern |
+|---|---|---|
+| `LOCAL_DATE` (default) | `java.time.LocalDate` | `yyyy-MM-dd` |
+| `LOCAL_DATE_TIME` | `java.time.LocalDateTime` | `yyyy-MM-dd'T'HH:mm:ss` |
+| `UTIL_DATE` | `java.util.Date` | `yyyy-MM-dd` |
+| `SQL_DATE` | `java.sql.Date` | `yyyy-MM-dd` |
+| `SQL_TIMESTAMP` | `java.sql.Timestamp` | `yyyy-MM-dd HH:mm:ss` |
 
 ```kotlin
-// All filters provide factory methods
-ExactFilter.of(User::status)
-PartialFilter.of(User::name)
-GreaterFilter.of(User::age, orEqual = true)
-LessFilter.of(User::age, orEqual = true)
+DateFilter("createdAt")                                       // LocalDate, default pattern
+DateFilter.forLocalDateTime("updatedAt", "dd/MM/yyyy HH:mm:ss")
+DateFilter.forUtilDate(User::birthDate, "MM-dd-yyyy")
+
+DateFilter.builder("eventDate")
+    .useLocalDate()
+    .withPattern("yyyy/MM/dd")
+    .build()
 ```
 
-## 📊 Sorting
+Accepted value formats:
 
-### URL Parameter Sorting
+| Format | Meaning | Example |
+|---|---|---|
+| `2024-01-01` | exact match | `date = '2024-01-01'` |
+| `2024-01-01\|2024-12-31` | range (pipe) | `date >= ... AND date <= ...` |
+| `>2024-01-01`, `>=`, `<`, `<=`, `<>` | comparison prefix | `date > '2024-01-01'` etc. |
+
+## Sorting
 
 ```java
-return Baradum.make(User.class)
+Baradum.make(User.class)
     .allowedSort("name", "createdAt")
-    .allowedSort(new OrderBy("alias", "field_name"))
+    .allowedSort(new OrderBy("alias", "actual_column"))  // expose a friendly name for a differently-named column
     .get();
 ```
-
-**URL Examples:**
-- `?sort=name` → `ORDER BY name ASC`
-- `?sort=-name` → `ORDER BY name DESC`
-- `?sort=name,-createdAt` → `ORDER BY name ASC, createdAt DESC`
-
-### Kotlin Property References for Sorting
 
 ```kotlin
 Baradum.make(User::class.java)
@@ -434,314 +305,125 @@ Baradum.make(User::class.java)
     .get()
 ```
 
-## 📝 Body-Based Filtering
+- `?sort=name` → `ORDER BY name ASC`
+- `?sort=-name` → `ORDER BY name DESC`
+- `?sort=name,-createdAt` → both, applied in the order given
 
-For complex filtering scenarios, use JSON body:
+Requesting a sort field that isn't in `allowedSort(...)` throws `SortableException`.
+
+## Body-based filtering
+
+For filter combinations too complex for a query string, POST a JSON body and call `.useBody()` (or `.useOnlyBody()` to reject GET/query-string filtering entirely):
+
+```kotlin
+Baradum.make(User::class.java)
+    .allowedFilters(ExactFilter(User::id), PartialFilter(User::name))
+    .useBody()
+    .get()
+```
+
+Body shape (matches `BodyRequest` / `FilterRequest` / `OrderRequest` exactly):
 
 ```json
 {
     "filters": [
-        {
-            "field": "id",
-            "value": "1",
-            "operator": "EQUAL"
-        },
-        {
-            "field": "name",
-            "value": "abc%",
-            "operator": "LIKE",
-            "type": "OR"
-        },
-        {
-            "field": "status",
-            "operator": "IS_NULL",
-            "type": "AND"
-        },
+        { "field": "id", "value": "1", "operator": "EQUAL" },
+        { "field": "name", "value": "abc%", "operator": "LIKE", "type": "OR" },
+        { "field": "status", "operator": "IS_NULL", "type": "AND" },
         {
             "subFilters": [
-                {
-                    "field": "id",
-                    "value": "1",
-                    "operator": "EQUAL"
-                },
-                {
-                    "field": "status",
-                    "value": "ACTIVE,INACTIVE",
-                    "operator": "IN",
-                    "type": "OR"
-                }
+                { "field": "status", "value": "ACTIVE,INACTIVE", "operator": "IN", "type": "OR" }
             ]
         }
     ],
     "sorts": [
-        {
-            "field": "id"
-        },
-        {
-            "field": "name",
-            "sort": "DESC"
-        }
+        { "field": "id" },
+        { "field": "name", "sort": "DESC" }
     ]
 }
 ```
 
-### Supported Body Filters
+- `operator` is one of the `BaradumOperator` values: `EQUAL`, `DIFF`, `GREATER`, `GREATER_OR_EQUAL`, `LESS`, `LESS_OR_EQUAL`, `LIKE`, `NOT_LIKE`, `IN`, `NOT_IN`, `IS_NULL`, `IS_NOT_NULL`, `BETWEEN` (defaults to `EQUAL`).
+- `type` (how this condition joins the previous one) is `AND` or `WhereOperator.OR` (defaults to `AND`).
+- `field` must match a filter's **`param`**, not its `internalName` — the request is only ever allowed to name filters you declared with `allowedFilters(...)`; anything else throws `FilterException`.
+- `subFilters` nests recursively for grouped conditions.
+- Every built-in filter supports body operation by default (`Filter.supportBodyOperation()` returns `true` unless a filter overrides it — none of the built-ins do).
 
-- `ExactFilter`
-- `EnumFilter`
-- `DateFilter`
-- All filters with `supportBodyOperation()` returning `true`
+## Pagination and results
 
-## 🔧 Custom Filters
-
-### Creating Custom Filters
+`Baradum<T, Q>` exposes three terminal operations, all of which apply your filters/sort first:
 
 ```kotlin
-class CustomRangeFilter<Q : QueryBuilder<*>>(
+baradum.get()                 // List<T> — everything matching
+baradum.page(20)              // Page<T> — first 20 (offset 0)
+baradum.page(20, 40)          // Page<T> — 20 rows starting at offset 40
+baradum.findFirst()           // Optional<T> — first matching row, or empty
+```
+
+`Page<T>` carries `content`, `totalElements`, `limit`, `offset`, plus derived `totalPages`, `currentPage`, `hasNext`, `hasPrevious`.
+
+If you called `.withParams(map)` and that map contains `"limit"`/`"offset"` keys, `.page(limit, offset)` prefers those over the arguments you passed in code.
+
+## Custom filters
+
+For anything the built-in filters don't cover, subclass `Filter<T, Q>` directly:
+
+```kotlin
+class RatingFilter<Q : QueryBuilder<*>>(
     param: String,
     internalName: String = param
-) : Filter<String, Q>(param, internalName) {
+) : Filter<Double, Q>(param, internalName) {
 
     override fun filterByParam(query: Q, value: String) {
-        val parts = value.split("-")
-        val min = parts[0].toInt()
-        val max = parts[1].toInt()
-        
-        query.where(internalName, BaradumOperator.GREATER_OR_EQUAL, min)
-        query.where(internalName, BaradumOperator.LESS_OR_EQUAL, max)
+        query.where(internalName, BaradumOperator.GREATER_OR_EQUAL, value.toDouble())
     }
+
+    override fun transform(value: String): Double = value.toDouble()
 }
 ```
 
-### Lambda-Based Custom Filter
+If you're on Hefesto, the ready-made `CustomFilter` avoids the subclass entirely for simple lambda logic (see [Filters](#customfilter--your-own-logic-hefesto-module) above).
 
-```java
-return Baradum.make(User.class)
-    .allowedFilters(
-        new CustomFilter<>("status", (query, value) -> {
-            if (value.equals("premium")) {
-                query.where("subscription_level", BaradumOperator.GREATER, 5);
-            } else {
-                query.where("status", BaradumOperator.EQUAL, value);
-            }
-        })
-    )
-    .get();
-```
+## Configuration
 
-## ⚙️ Configuration
+There are two ways Baradum learns about the current request's parameters. **Prefer the explicit one** — it has no global mutable state and works identically on every framework:
 
-### Spring Boot (Auto-Configuration)
-
-No configuration needed! Spring Boot 2 & 3 are auto-configured.
-
-### Manual Configuration
-
-```java
-public class BaradumConfig {
-    @Bean
-    public void configureBaradum(HttpServletRequest request) {
-        // For Apache Tomcat 9 (Spring Boot 2)
-        new AutoConfigurationSpring2(request);
-        
-        // For Apache Tomcat 10 (Spring Boot 3)
-        new AutoConfigurationSpring3(request);
-    }
-}
-```
-
-### Custom Request Implementation
-
-```java
-public class MyCustomRequest extends BasicRequest<HttpServletRequest> {
-    public MyCustomRequest(HttpServletRequest request) {
-        super(request);
-    }
-
-    @Override
-    public String findParamByName(String name) {
-        return getRequest().getParameter(name);
-    }
-
-    @Override
-    public String getMethod() {
-        return getRequest().getMethod();
-    }
-
-    @Override
-    public BufferedReader getReader() throws IOException {
-        return getRequest().getReader();
-    }
-}
-
-// Configure Baradum
-Baradum.setRequest(new MyCustomRequest(request));
-```
-
-## 🎓 Advanced Examples
-
-### E-commerce Product Filtering
+### `withParams` / `withParam` (recommended)
 
 ```kotlin
-@GetMapping("/products")
-fun getProducts(): Page<Product> {
-    return Baradum.make(Product::class.java)
-        .allowedFilters(
-            ExactFilter(Product::category),
-            PartialFilter(Product::name, "search"),
-            GreaterFilter(Product::price, "minPrice", orEqual = true),
-            LessFilter(Product::price, "maxPrice", orEqual = true),
-            EnumFilter(Product::status, ProductStatus::class.java),
-            DateFilter.forLocalDate(Product::releaseDate),
-            InFilter(Product::brand, "brands")
-        )
-        .allowedSort(Product::price, Product::name, Product::releaseDate)
-        .page()
-}
+Baradum.make(User::class.java)
+    .allowedFilters(ExactFilter(User::name))
+    .withParams(request.parameterMap.mapValues { it.value.first() }) // Map<String, String>
+    .get()
 ```
 
-**URL Examples:**
-- `?category=electronics&minPrice=100&maxPrice=500&search=laptop`
-- `?brands=Apple,Samsung,Sony&status=IN_STOCK&sort=price`
-- `?releaseDate=>2024-01-01&sort=-releaseDate`
+### Static request wiring (`Baradum.request`)
 
-### User Management with Complex Filtering
+If you don't call `withParams(...)`, Baradum falls back to a shared static field, `Baradum.request: BasicRequest<*>?`, that you (or an auto-configuration) set once. This is what `baradum-apache-tomcat` does for you automatically on Spring Boot 3 + Hefesto: it registers `AutoConfigurationSpring3` as a Spring auto-configuration bean that receives Spring's request-scoped `HttpServletRequest` proxy and assigns it to `Baradum.request` — no extra code needed on your end, and it stays correct across concurrent requests because Spring injects a thread-aware proxy, not the request object itself.
 
-```java
-@GetMapping("/users")
-public List<User> getUsers() {
-    return Baradum.make(User.class)
-        .allowedFilters(
-            PartialFilter("username"),
-            PartialFilter("email"),
-            SearchFilter.of("search", "username", "email", "fullName"),
-            EnumFilter("role", Role.class),
-            EnumFilter("status", UserStatus.class),
-            DateFilter.forLocalDateTime("createdAt"),
-            DateFilter.forLocalDateTime("lastLogin"),
-            GreaterFilter("loginCount", "minLogins", true),
-            IntervalFilter("age"),
-            IsNullFilter("deletedAt")
-        )
-        .allowedSort("username", "createdAt", "lastLogin")
-        .get();
-}
-```
-
-### Event Calendar Filtering
+For anything else — Spring Boot 2 / Tomcat 9, a non-Spring framework, or the QueryDSL module without `baradum-apache-tomcat` — implement `BasicRequest` yourself and set the field per-request:
 
 ```kotlin
-@GetMapping("/events")
-fun getEvents(): List<Event> {
-    return Baradum.make(Event::class.java)
-        .allowedFilters(
-            ExactFilter(Event::organizerId),
-            PartialFilter(Event::title, "search"),
-            EnumFilter(Event::category, EventCategory::class.java),
-            DateFilter.builder<QueryBuilder<*>>("eventDate")
-                .useLocalDateTime()
-                .withPattern("yyyy-MM-dd HH:mm")
-                .build(),
-            GreaterFilter(Event::attendeeCount, "minAttendees", true),
-            LessFilter(Event::attendeeCount, "maxAttendees", true),
-            InFilter(Event::location, "locations")
-        )
-        .allowedSort(Event::eventDate, Event::title)
-        .get()
+class MyCustomRequest(httpRequest: HttpServletRequest) : BasicRequest<HttpServletRequest>(httpRequest) {
+    override fun findParamByName(name: String): String? = request.getParameter(name)
+    override val method: String get() = request.method
+    override val json: String get() = request.reader.readText()
 }
+
+// once per request, before calling .get()/.page()/.findFirst()
+Baradum.request = MyCustomRequest(httpServletRequest)
 ```
 
-## 🔄 Migration Guide
+(From Java: `Baradum.setRequest(new MyCustomRequest(request));`.)
 
-### Migrating from 2.0.x to 2.1.x
+Because this is a single static field shared process-wide, only rely on it when you're certain your framework hands you a per-request-safe value (a scoped proxy, as Spring does) — otherwise prefer `withParams(...)`.
 
-#### DateFilter Changes
+## Known limitations
 
-**Before:**
-```java
-DateFilter.setDateFormat("dd/MM/yyyy");  // Global static configuration
-DateFilter("createdAt")
-```
-
-**After:**
-```java
-// Per-instance configuration (recommended)
-DateFilter.forUtilDate("createdAt", "dd/MM/yyyy")
-
-// Or builder pattern
-DateFilter.builder("createdAt")
-    .useUtilDate()
-    .withPattern("dd/MM/yyyy")
-    .build()
-```
-
-#### EnumFilter Changes
-
-**Before:**
-```java
-EnumFilter("status")
-    .setEnumClass(Status.class)
-```
-
-**After:**
-```java
-// Enum class is now required in constructor
-EnumFilter("status", Status.class)
-```
-
-#### New Filters Available
-
-Add these new filters to your arsenal:
-
-```java
-// Greater/Less comparisons
-GreaterFilter("age", true)  // >= operator
-LessFilter("maxAge", true)  // <= operator
-
-// ComparisonFilter for flexible operators
-ComparisonFilter("price")  // Supports >, >=, <, <=, !=
-```
-
-#### Kotlin Property References
-
-**Before:**
-```kotlin
-ExactFilter("username")
-PartialFilter("email")
-```
-
-**After:**
-```kotlin
-// Type-safe with compile-time checking
-ExactFilter(User::username)
-PartialFilter(User::email)
-```
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE.txt](LICENSE.txt) file for details.
-
-## ☕ Support
-
-If you find this library helpful, consider buying me a coffee!
-
-[![Buy Me A Coffee](./buy-me-coffee.png)](https://www.buymeacoffee.com/robertomike)
-
-## ⚠️ Warning
-
-This library currently doesn't support automatic Swagger/OpenAPI definitions. You'll need to document your filter parameters manually in your API documentation.
-
-## 📚 Additional Resources
-
-- [GitHub Repository](https://github.com/RobertoMike/Baradum)
-- [Issue Tracker](https://github.com/RobertoMike/Baradum/issues)
-- [Changelog](CHANGELOG.md)
-- [Migration Guide](MIGRATION_GUIDE.md)
+- No automatic Swagger/OpenAPI generation for filter parameters.
+- `baradum-apache-tomcat` wires only the Hefesto backend, and only for Jakarta Servlet / Spring Boot 3. There is currently no equivalent module for Spring Boot 2, Tomcat 9, or QueryDSL — use `withParams(...)` or a custom `BasicRequest` in those cases.
+- Filter field names in body requests (`FilterRequest.field`) must match a declared filter's `param`; they are validated against `allowedFilters(...)` at request time, not compile time.
 
 ---
 
-**Made with ❤️ by Roberto Mike**
+See also: [FILTER_API_REFERENCE.md](FILTER_API_REFERENCE.md) · [QUICK_REFERENCE.md](QUICK_REFERENCE.md) · [baradum-querydsl/README.md](baradum-querydsl/README.md) · [CHANGELOG.md](CHANGELOG.md)

@@ -1,165 +1,104 @@
 # Baradum QueryDSL Module
 
-QueryDSL implementation for the Baradum filtering library. This module provides seamless integration between Baradum's powerful filtering system and QueryDSL's type-safe query API with convenient extension functions.
+QueryDSL implementation of Baradum's `QueryBuilder`, for type-safe queries against JPA/Hibernate entities via generated Q-classes.
 
-## Features
-
-- ✅ Full QueryDSL integration with type-safe queries
-- ✅ **Extension functions** for direct Q-class usage (`QUser.user.baradum(...)`)
-- ✅ All Baradum operators supported (EQUAL, DIFF, GREATER, LESS, LIKE, IN, IS_NULL, BETWEEN, etc.)
-- ✅ Kotlin property reference support for type-safe filtering
-- ✅ Pagination with total count
-- ✅ Sorting (ASC/DESC)
-- ✅ AND/OR logical operators
-- ✅ Works with JPA/Hibernate entities
-- ✅ **81 comprehensive integration and unit tests**
-
-## Installation
-
-Add the dependency to your `build.gradle.kts`:
-
-```kotlin
-dependencies {
-    implementation("io.github.robertomike:baradum-querydsl:3.0.0")
-}
-```
+See [../DOCUMENTATION.md](../DOCUMENTATION.md) for the general Baradum guide and [../FILTER_API_REFERENCE.md](../FILTER_API_REFERENCE.md) for the full filter reference — this file covers only what's specific to QueryDSL.
 
 ## Requirements
 
-- QueryDSL 5.0.0+
+- QueryDSL 5.0.0+ (`jakarta` classifier)
 - Jakarta Persistence API 3.1.0+
-- JPA/Hibernate for entity management
-- Generated Q-classes (QueryDSL APT processor)
+- JPA/Hibernate entity manager
+- Generated Q-classes (via the QueryDSL APT processor)
 
-## Quick Start
-
-### 1. Setup QueryDSL APT Processor
-
-Configure kapt to generate Q-classes:
+## Installation
 
 ```kotlin
 plugins {
-    kotlin("kapt")
+    kotlin("kapt") // needed to generate Q-classes
 }
 
 dependencies {
+    implementation("io.github.robertomike:baradum-querydsl:3.0.1")
     kapt("com.querydsl:querydsl-apt:5.0.0:jakarta")
+}
+
+kapt {
+    arguments {
+        arg("querydsl.entityAccessors", "true")
+    }
 }
 ```
 
-### 2. Define Your Entity
+## Quick start
 
 ```kotlin
 @Entity
 @Table(name = "users")
 data class User(
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
-    
-    @Column(name = "name")
     val name: String,
-    
-    @Column(name = "email")
     val email: String,
-    
-    @Column(name = "age")
     val age: Int,
-    
-    @Column(name = "status")
     @Enumerated(EnumType.STRING)
-    val status: UserStatus
+    val status: UserStatus,
 )
 
-enum class UserStatus {
-    ACTIVE, INACTIVE, PENDING
-}
+enum class UserStatus { ACTIVE, INACTIVE, PENDING }
 ```
 
-### 3. Use Extension Functions (Recommended)
+The APT processor generates `QUser` for this entity. Two ways to build a query from it:
 
-The easiest way to use Baradum with QueryDSL is through extension functions:
+### 1. Extension functions (recommended)
 
 ```kotlin
-import io.github.robertomike.baradum.querydsl.extensions.*
+import io.github.robertomike.baradum.querydsl.extensions.baradum
 import io.github.robertomike.baradum.core.filters.*
 
 class UserService(private val entityManager: EntityManager) {
-    
-    fun findUsers(request: HttpServletRequest): List<User> {
-        // Use the baradum() extension function directly on Q-classes
-        return QUser.user
+
+    fun findUsers(params: Map<String, String>): List<User> =
+        QUser.user
             .baradum(entityManager)
             .allowedFilters(
                 ExactFilter(User::name),
                 PartialFilter(User::email),
-                GreaterFilter(User::age, orEqual = true)
+                GreaterFilter(User::age, orEqual = true),
             )
             .allowedSort("name", "age")
-            .withParams(request.parameterMap.mapValues { it.value.first() })
+            .withParams(params)
             .get()
-    }
-    
-    // Or use the queryBuilder() extension for direct QueryBuilder access
-    fun findActiveUsers(): List<User> {
-        return QUser.user
-            .queryBuilder(entityManager)
-            .where("status", BaradumOperator.EQUAL, UserStatus.ACTIVE)
-            .orderBy("name", SortDirection.ASC)
-            .get()
-    }
 }
 ```
 
-### 4. Alternative: Traditional Factory Approach
+`withParams(map)` is how you feed request parameters in — there's no `applyFilters(request)` method; filtering happens automatically inside `.get()` / `.page()` / `.findFirst()` once params are set (via `withParams`/`withParam`, or the shared `Baradum.request` static field — see [../DOCUMENTATION.md#configuration](../DOCUMENTATION.md#configuration)).
 
-You can also use the traditional factory pattern:
+### 2. `QueryDslBaradum` factory
 
 ```kotlin
 import io.github.robertomike.baradum.querydsl.QueryDslBaradum
 
-class UserService(private val entityManager: EntityManager) {
-    
-    fun findUsers(request: HttpServletRequest): List<User> {
-        val baradum = QueryDslBaradum.make(QUser.user, entityManager)
-            .allowedFilters(
-                ExactFilter(User::name),
-                PartialFilter(User::email)
-            )
-            .allowedSort("name", "age")
-        
-        return baradum.withParams(request.parameterMap.mapValues { it.value.first() }).get()
-    }
-}
+val users = QueryDslBaradum.make(QUser.user, entityManager)
+    .allowedFilters(ExactFilter(User::name), PartialFilter(User::email))
+    .allowedSort("name", "age")
+    .withParams(params)
+    .get()
 ```
 
-## Extension Functions
-
-The module provides convenient extension functions for `EntityPathBase<T>` (Q-classes):
-
-### `baradum()` Extensions
-
-Create a Baradum instance directly from a Q-class:
+Both forms accept an `EntityManager` or a `JPAQueryFactory`, and an optional pre-built filter list:
 
 ```kotlin
-// Basic usage
-QUser.user.baradum(entityManager)
+val filters = listOf(ExactFilter(User::name), GreaterFilter(User::age, orEqual = true))
 
-// With pre-configured filters (vararg)
-QUser.user.baradum(
-    entityManager,
-    ExactFilter(User::name),
-    GreaterFilter(User::age, orEqual = true)
-)
-
-// With filters list
-val filters = listOf(ExactFilter(User::name))
-QUser.user.baradum(entityManager, filters)
+QUser.user.baradum(entityManager, filters)               // List<Filter<*, *>>
+QUser.user.baradum(entityManager, ExactFilter(User::name), PartialFilter(User::email)) // vararg
+QueryDslBaradum.make(QUser.user, entityManager, filters)
 ```
 
-### `queryBuilder()` Extension
+### Direct query builder access
 
-Get direct access to the QueryDslQueryBuilder:
+Skip Baradum's filter DSL entirely and drive `QueryDslQueryBuilder` yourself:
 
 ```kotlin
 val users = QUser.user
@@ -169,217 +108,77 @@ val users = QUser.user
     .get()
 ```
 
-## Complete Usage Examples
-
-All Baradum filters work with QueryDSL:
+## Pagination
 
 ```kotlin
-// Exact match
-ExactFilter(User::status)
-
-// Partial string match (LIKE)
-PartialFilter(User::name)
-
-// Comparison filters
-GreaterFilter(User::age, orEqual = true)  // age >= value
-LessFilter(User::age, orEqual = false)    // age < value
-
-// Date filters
-DateFilter.forLocalDate("createdAt")
-DateFilter.forLocalDateTime("updatedAt")
-
-// IN filter
-InFilter("status")
-
-// NULL checks
-IsNullFilter("deletedAt")
-
-// Search filter (multiple fields)
-SearchFilter("search", listOf("name", "email"))
-
-// Interval/Range filter
-IntervalFilter("age")
-```
-
-## Usage Examples
-
-### Basic Filtering
-
-```kotlin
-// GET /users?name=John&status=ACTIVE
-val baradum = QueryDslBaradum.make(QUser.user, entityManager)
-    .allowedFilters(
-        ExactFilter(User::name),
-        ExactFilter(User::status)
-    )
-
-val users = baradum.applyFilters(request).get()
-```
-
-### Filtering with Sorting
-
-```kotlin
-// GET /users?minAge=18&sort=name,-age
-val baradum = QueryDslBaradum.make(QUser.user, entityManager)
-    .allowedFilters(
-        GreaterFilter(User::age, "minAge", orEqual = true)
-    )
-    .allowedSort("name", "age", "createdAt")
-
-val users = baradum.applyFilters(request).get()
-```
-
-### Pagination
-
-```kotlin
-// GET /users?page=2&limit=20
-val baradum = QueryDslBaradum.make(QUser.user, entityManager)
+val page = QUser.user.baradum(entityManager)
     .allowedFilters(ExactFilter(User::status))
+    .withParams(params)
+    .page(20, 40) // limit, offset
 
-val page = baradum.applyFilters(request).page(20, 20) // limit, offset
-println("Total: ${page.totalElements}")
-println("Users: ${page.content}")
+println("Total: ${page.totalElements}, rows: ${page.content.size}")
 ```
 
-### Advanced: Custom Predicates
+## Advanced: dropping to raw QueryDSL
 
-You can access the underlying QueryDSL query for advanced operations:
+`QueryDslQueryBuilder.getQuery()` returns the underlying `JPAQuery<T>` for anything Baradum's filter DSL doesn't cover:
 
 ```kotlin
-val queryBuilder = QueryDslQueryBuilder(QUser.user, entityManager)
+val builder = QUser.user.queryBuilder(entityManager)
+builder.where("status", BaradumOperator.EQUAL, UserStatus.ACTIVE)
 
-// Apply Baradum filters
-queryBuilder
-    .where("age", BaradumOperator.GREATER_OR_EQUAL, 18)
-    .where("status", BaradumOperator.EQUAL, UserStatus.ACTIVE)
-    .orderBy("name", SortDirection.ASC)
+val query = builder.getQuery()
+query.where(QUser.user.email.endsWith("@example.com")) // raw QueryDSL predicate, combined with the above
 
-// Get the underlying QueryDSL query for custom operations
-val query = queryBuilder.getQuery()
-query.where(QUser.user.email.endsWith("@example.com"))
-
-val users = queryBuilder.get()
+val users = builder.get()
 ```
 
-## Kotlin Property References
+## Filters that work here
 
-Use type-safe Kotlin property references instead of strings:
+All of `baradum-core`'s filters work unchanged against QueryDSL — see [../FILTER_API_REFERENCE.md](../FILTER_API_REFERENCE.md) for the full list and which ones accept Kotlin property references. There is no QueryDSL-specific `CustomFilter`; if you need one, subclass `Filter<T, QueryDslQueryBuilder<*>>` directly (see [../DOCUMENTATION.md#custom-filters](../DOCUMENTATION.md#custom-filters)).
 
-```kotlin
-// Type-safe ✅
-ExactFilter(User::name)
-GreaterFilter(User::age, orEqual = true)
+## Operator mapping
 
-// String-based (also works but not type-safe)
-ExactFilter("name")
-GreaterFilter("age", orEqual = true)
-```
+| `BaradumOperator` | QueryDSL `Ops` |
+|---|---|
+| `EQUAL` | `EQ` |
+| `DIFF` | `NE` |
+| `GREATER` | `GT` |
+| `GREATER_OR_EQUAL` | `GOE` |
+| `LESS` | `LT` |
+| `LESS_OR_EQUAL` | `LOE` |
+| `LIKE` | `LIKE` |
+| `NOT_LIKE` | `LIKE`, negated |
+| `IN` | `IN` |
+| `NOT_IN` | `NOT_IN` |
+| `IS_NULL` | `IS_NULL` |
+| `IS_NOT_NULL` | `IS_NOT_NULL` |
+| `BETWEEN` | `BETWEEN` |
 
-Benefits:
-- Compile-time field validation
-- Refactoring support
-- IDE auto-completion
-- No typos in field names
+## Performance note
 
-## Operators Mapping
+Field-path lookups (mapping a filter's field name to a QueryDSL `Path`) are cached process-wide in a `ConcurrentHashMap` keyed by `(entity class, field name)`, so repeated queries against the same entity don't pay reflection cost on every request.
 
-| Baradum Operator | QueryDSL Ops | Description |
-|-----------------|--------------|-------------|
-| EQUAL | EQ | Equals |
-| DIFF | NE | Not equals |
-| GREATER | GT | Greater than |
-| GREATER_OR_EQUAL | GOE | Greater or equal |
-| LESS | LT | Less than |
-| LESS_OR_EQUAL | LOE | Less or equal |
-| LIKE | LIKE | String pattern match |
-| NOT_LIKE | LIKE (negated) | Not matching pattern |
-| IN | IN | In list |
-| NOT_IN | NOT_IN | Not in list |
-| IS_NULL | IS_NULL | Is null |
-| IS_NOT_NULL | IS_NOT_NULL | Is not null |
-| BETWEEN | BETWEEN | Between two values |
+## Comparison with Hefesto
 
-## Configuration
-
-### With EntityManager
-
-```kotlin
-val baradum = QueryDslBaradum.make(QUser.user, entityManager)
-```
-
-### With JPAQueryFactory
-
-```kotlin
-val queryFactory = JPAQueryFactory(entityManager)
-val baradum = QueryDslBaradum.make(QUser.user, queryFactory)
-```
-
-### With Filters Pre-configured
-
-```kotlin
-val filters = listOf(
-    ExactFilter(User::name),
-    GreaterFilter(User::age, orEqual = true)
-)
-
-val baradum = QueryDslBaradum.make(QUser.user, entityManager, filters)
-```
-
-## Testing
-
-The module includes comprehensive tests:
-
-- **16 converter tests** - Verify all operator/sort conversions
-- **5 structure tests** - Verify interface implementations and enums
-
-Run tests:
-```bash
-./gradlew :baradum-querydsl:test
-```
-
-## Comparison with Hefesto Module
-
-| Feature | Hefesto | QueryDSL |
-|---------|---------|----------|
-| Type Safety | ✅ | ✅ |
-| JPA Support | ✅ | ✅ |
-| Custom Queries | Limited | Full QueryDSL power |
-| Learning Curve | Low | Medium |
-| IDE Support | Good | Excellent |
-| Q-classes Required | ❌ | ✅ |
+| | Hefesto | QueryDSL |
+|---|---|---|
+| Type safety | Runtime field names | Compile-time-checked Q-classes |
+| Setup | No codegen | Requires the QueryDSL APT processor |
+| Custom queries | `CustomFilter` lambda | Full QueryDSL API via `getQuery()` |
+| Spring Boot auto-config | ✅ via `baradum-apache-tomcat` | ❌ wire the request manually |
 
 ## Troubleshooting
 
-### Q-classes Not Generated
-
-Ensure kapt is configured properly:
+**Q-classes not generated** — confirm `kapt` is applied and the APT dependency is present:
 
 ```kotlin
-plugins {
-    kotlin("kapt")
-}
-
-kapt {
-    arguments {
-        arg("querydsl.entityAccessors", "true")
-    }
-}
-
-dependencies {
-    kapt("com.querydsl:querydsl-apt:5.0.0:jakarta")
-}
+plugins { kotlin("kapt") }
+dependencies { kapt("com.querydsl:querydsl-apt:5.0.0:jakarta") }
 ```
 
-### Type Mismatch Errors
-
-Make sure your entities use Jakarta Persistence annotations (jakarta.persistence.*), not javax.persistence.*.
+**Type mismatch errors** — make sure entities use `jakarta.persistence.*` annotations, not `javax.persistence.*`.
 
 ## License
 
-MIT License - Same as Baradum core
-
-## Links
-
-- [Baradum Core Documentation](../DOCUMENTATION.md)
-- [QueryDSL Documentation](http://querydsl.com/)
-- [Filter API Reference](../FILTER_API_REFERENCE.md)
+MIT — same as the rest of Baradum.
