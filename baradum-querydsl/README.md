@@ -19,7 +19,7 @@ plugins {
 }
 
 dependencies {
-    implementation("io.github.robertomike:baradum-querydsl:3.0.1")
+    implementation("io.github.robertomike:baradum-querydsl:3.1.0")
     kapt("com.querydsl:querydsl-apt:5.0.0:jakarta")
 }
 
