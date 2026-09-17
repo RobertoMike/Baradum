@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "io.github.robertomike"
-version = "3.1.0"
+version = "4.0.0"
 
 repositories {
     mavenLocal()

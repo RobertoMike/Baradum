@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "io.github.robertomike"
-version = "3.0.0"
+version = "4.0.0"
 
 allprojects {
     repositories {
@@ -15,4 +15,4 @@ allprojects {
 
 // This is now a parent project - actual artifacts are in submodules
 var jdkCompileVersion = 17
-var hefestoVersion = "3.0.0"
+var hefestoVersion = "4.0.0"

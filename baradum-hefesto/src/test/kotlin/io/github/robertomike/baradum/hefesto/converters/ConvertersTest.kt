@@ -78,7 +78,7 @@ class ConvertersTest {
 
     @Test
     fun `toHefesto throws for BETWEEN since Hefesto has no native operator for it`() {
-        // BETWEEN doesn't exist in Hefesto 3. HefestoQueryBuilder.where() special-cases it via
+        // BETWEEN is not a native Hefesto operator. HefestoQueryBuilder.where() special-cases it via
         // whereCustom()/cb.between() before ever calling this converter - reaching here would
         // mean that special-casing was bypassed, so this must fail loudly rather than silently
         // falling back to GREATER_OR_EQUAL (which used to drop the upper bound entirely).

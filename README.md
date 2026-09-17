@@ -33,17 +33,17 @@ Pick **one** query backend (Hefesto or QueryDSL) and, optionally, the Apache Tom
 
 ## Installation
 
-Current version: **3.1.0**
+Current version: **4.0.0**
 
 ```kotlin
 dependencies {
     // Pick ONE query backend:
-    implementation("io.github.robertomike:baradum-hefesto:3.1.0")
+    implementation("io.github.robertomike:baradum-hefesto:4.0.0")
     // or
-    implementation("io.github.robertomike:baradum-querydsl:3.1.0")
+    implementation("io.github.robertomike:baradum-querydsl:4.0.0")
 
     // Optional: Spring Boot 3 request auto-wiring (requires baradum-hefesto)
-    implementation("io.github.robertomike:baradum-apache-tomcat:3.1.0")
+    implementation("io.github.robertomike:baradum-apache-tomcat:4.0.0")
 }
 ```
 
@@ -51,7 +51,7 @@ dependencies {
 <dependency>
     <groupId>io.github.robertomike</groupId>
     <artifactId>baradum-hefesto</artifactId>
-    <version>3.1.0</version>
+    <version>4.0.0</version>
 </dependency>
 ```
 

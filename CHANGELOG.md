@@ -5,6 +5,15 @@ All notable changes to Baradum will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.0.0] - 2026-09-17
+
+### Changed
+
+- Upgraded `baradum-hefesto` to Hefesto `4.0.0`, including Hibernate `7.4.7.Final` support. Hefesto 4 requires Hibernate 7 and consolidates its Hibernate artifacts into `hefesto-hibernate`.
+- Verified the Hefesto integration and H2 database test suite against the upstream Hefesto 4 implementation.
+
+This is a major release because the Hefesto backend now requires Hibernate 7.
+
 ## [3.1.0] - 2026-08-29
 
 ### Added

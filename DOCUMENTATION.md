@@ -19,18 +19,18 @@ This is the full user guide for Baradum. For a quick pitch and install snippet, 
 
 ## Installation
 
-Current version: **3.1.0**. Pick one query backend module:
+Current version: **4.0.0**. Pick one query backend module:
 
 ```kotlin
 dependencies {
     // Hefesto (Hibernate/HefestoSQL)
-    implementation("io.github.robertomike:baradum-hefesto:3.1.0")
+    implementation("io.github.robertomike:baradum-hefesto:4.0.0")
 
     // OR QueryDSL (type-safe, requires generated Q-classes)
-    implementation("io.github.robertomike:baradum-querydsl:3.1.0")
+    implementation("io.github.robertomike:baradum-querydsl:4.0.0")
 
     // Optional: auto-wires the current HttpServletRequest for Spring Boot 3 + Hefesto
-    implementation("io.github.robertomike:baradum-apache-tomcat:3.1.0")
+    implementation("io.github.robertomike:baradum-apache-tomcat:4.0.0")
 }
 ```
 
@@ -38,7 +38,7 @@ dependencies {
 <dependency>
     <groupId>io.github.robertomike</groupId>
     <artifactId>baradum-hefesto</artifactId>
-    <version>3.1.0</version>
+    <version>4.0.0</version>
 </dependency>
 ```
 
