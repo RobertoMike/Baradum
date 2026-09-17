@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "io.github.robertomike"
-version = "3.1.0"
+version = "4.0.0"
 
 repositories {
     mavenLocal()
@@ -14,7 +14,7 @@ repositories {
 }
 
 var jdkCompileVersion = 17
-var hefestoVersion = "3.0.0"
+var hefestoVersion = "4.0.0"
 
 dependencies {
     // Core module dependency
@@ -40,8 +40,8 @@ dependencies {
     
     // Database for testing
     testImplementation("com.h2database:h2:2.2.224")
-    testImplementation("org.hibernate.orm:hibernate-core:6.2.7.Final")
-    testImplementation("org.hibernate.orm:hibernate-hikaricp:6.2.7.Final")
+    testImplementation("org.hibernate.orm:hibernate-core:7.4.7.Final")
+    testImplementation("org.hibernate.orm:hibernate-hikaricp:7.4.7.Final")
     testImplementation("com.zaxxer:HikariCP:5.0.1")
     
     // Logging for Hibernate SQL debugging

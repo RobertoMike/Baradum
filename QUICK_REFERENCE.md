@@ -6,11 +6,11 @@ One-page cheat sheet. For explanations, see [DOCUMENTATION.md](DOCUMENTATION.md)
 
 ```kotlin
 dependencies {
-    implementation("io.github.robertomike:baradum-hefesto:3.1.0")     // Hefesto/Hibernate
+    implementation("io.github.robertomike:baradum-hefesto:4.0.0")     // Hefesto/Hibernate
     // or
-    implementation("io.github.robertomike:baradum-querydsl:3.1.0")    // QueryDSL
+    implementation("io.github.robertomike:baradum-querydsl:4.0.0")    // QueryDSL
 
-    implementation("io.github.robertomike:baradum-apache-tomcat:3.1.0") // optional: Spring Boot 3 + Hefesto request wiring
+    implementation("io.github.robertomike:baradum-apache-tomcat:4.0.0") // optional: Spring Boot 3 + Hefesto request wiring
 }
 ```
 
